@@ -1,0 +1,198 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "資料庫匯出工具";
+}
+
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            <h1 class="mb-4">📊 資料庫匯出工具</h1>
+            <p class="lead">快速匯出資料庫所有資料表的紀錄成CSV檔格式，並分析資料庫結構</p>
+        </div>
+    </div>
+
+    <form method="post">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>🔗 資料庫連線設定</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="DbType" class="form-label">資料庫類型</label>
+                            <select class="form-select" asp-for="DbConfig.DbType" required>
+                                <option value="">請選擇資料庫類型</option>
+                                <option value="Sqlite">SQLite</option>
+                                <option value="SqlServer">SQL Server</option>
+                                <option value="MySql">MySQL</option>
+                                <option value="Oracle">Oracle</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="ConnectionString" class="form-label">連線字串</label>
+                            <textarea class="form-control" asp-for="DbConfig.ConnectionString" rows="3" required
+                                      placeholder="例如: Data Source=server;Initial Catalog=database;User Id=user;Password=password;"></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="TableType" class="form-label">匯出物件類型</label>
+                            <select class="form-select" asp-for="DbConfig.TableType">
+                                <option value="Table">資料表 (Table)</option>
+                                <option value="View">檢視表 (View)</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="Size" class="form-label">每表匯出筆數</label>
+                            <input type="number" class="form-control" asp-for="DbConfig.Size" min="1" max="10000" value="100">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="Prefix" class="form-label">資料表名稱前綴 (可選)</label>
+                            <input type="text" class="form-control" asp-for="DbConfig.Prefix"
+                                   placeholder="例如: USER_ (只匯出以此開頭的資料表)">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>📁 匯出設定</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="ExportPath" class="form-label">匯出路徑</label>
+                            <input type="text" class="form-control" asp-for="ExConfig.ExportPath"
+                                   value="c:\temp" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" asp-for="ExConfig.MakeToZip" checked>
+                                <label class="form-check-label" for="MakeToZip">
+                                    壓縮成 ZIP 檔案
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="ZipFileName" class="form-label">ZIP 檔案名稱</label>
+                            <input type="text" class="form-control" asp-for="ExConfig.ZipFileName"
+                                   value="ExportData" placeholder="不含副檔名">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <h5>🔍 操作選項</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <button type="submit" name="action" value="test" class="btn btn-outline-primary">
+                                🔍 測試連線
+                            </button>
+                            <button type="submit" name="action" value="analyze" class="btn btn-info">
+                                📊 分析資料庫結構
+                            </button>
+                            <button type="submit" name="action" value="export" class="btn btn-success">
+                                📤 開始匯出
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    @if (!string.IsNullOrEmpty(Model.Message))
+    {
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <div class="alert @(Model.IsSuccess ? "alert-success" : "alert-danger")" role="alert">
+                    @Model.Message
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (Model.DatabaseInfo != null)
+    {
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>📊 資料庫資訊</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <strong>資料庫名稱:</strong><br>
+                                @Model.DatabaseInfo.DatabaseName
+                            </div>
+                            <div class="col-md-3">
+                                <strong>資料庫類型:</strong><br>
+                                @Model.DatabaseInfo.DatabaseType
+                            </div>
+                            <div class="col-md-3">
+                                <strong>版本:</strong><br>
+                                @Model.DatabaseInfo.Version
+                            </div>
+                            <div class="col-md-3">
+                                <strong>資料表數量:</strong><br>
+                                @Model.DatabaseInfo.TableCount
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (Model.Tables != null && Model.Tables.Any())
+    {
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>📋 資料表清單</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>資料表名稱</th>
+                                        <th>記錄數</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var table in Model.Tables)
+                                    {
+                                        <tr>
+                                            <td>@table</td>
+                                            <td>
+                                                <span class="badge bg-secondary">載入中...</span>
+                                            </td>
+                                            <td>
+                                                <a href="/TableDetail?tableName=@table" class="btn btn-sm btn-outline-info">
+                                                    查看詳細
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>

@@ -1,50 +1,89 @@
-﻿using ExportData.Models.Config;
+﻿using ExportData.Interfaces;
+using ExportData.Models.Config;
 using ExportData.Models.EnumType;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 
 namespace ExportData
 {
     public class MainService
     {
-        ConfigDbControlSection? _dbControlSection;               //資料庫控制參數
-        ConfigExControlSection? _exControlSection;               //資料匯出控制參數
-        ConfigDeIdentification? _deIdentification;              //資料去識別控制參數
-        public MainService(IConfiguration config)
+        private readonly ConfigDbControlSection? _dbControlSection;
+        private readonly ConfigExControlSection? _exControlSection;
+        private readonly ConfigDeIdentification? _deIdentification;
+        private readonly ILogger<MainService> _logger;
+
+        // Constructor for configuration-based mode
+        public MainService(IConfiguration config, ILogger<MainService> logger)
         {
-            Console.WriteLine("ExportData Service Start ...");
+            _logger = logger;
+            _logger.LogInformation("ExportData Service Start ...");
             LoadParameters(config);
         }
-        public Task RunAsync()
-        {
-            if(_dbControlSection is null || _exControlSection is null || _deIdentification is null) return Task.CompletedTask;
 
-            DbService dbService = new(_dbControlSection);               //資料庫存取服務
-            ExportService exportService = new(_exControlSection,_deIdentification);       //資料匯出服務
-            string[]? tableNames = (_dbControlSection.TableList != null && _dbControlSection.TableList.Length > 0) ? _dbControlSection.TableList : dbService.GetTableNames();
-            if (tableNames != null && tableNames.Length > 0)
+        // Constructor for interactive mode
+        public MainService(ConfigDbControlSection dbConfig, ConfigExControlSection exConfig, ILogger<MainService> logger)
+        {
+            _dbControlSection = dbConfig;
+            _exControlSection = exConfig;
+            _deIdentification = new ConfigDeIdentification { DeIdentification = false }; // Default
+            _logger = logger;
+            _logger.LogInformation("ExportData Service Start (Interactive Mode) ...");
+        }
+        public async Task RunAsync()
+        {
+            if (_dbControlSection is null || _exControlSection is null || _deIdentification is null)
             {
-                Console.WriteLine($"Exporting data for those tables: {Environment.NewLine} {string.Join(", " , tableNames)}");
-                foreach (string tableName in tableNames)
+                _logger.LogError("Configuration is incomplete");
+                return;
+            }
+
+            try
+            {
+                var dbService = new DbService(_dbControlSection, _logger.CreateLogger<DbService>());
+                var exportService = new ExportService(_exControlSection, _deIdentification, _logger.CreateLogger<ExportService>());
+
+                string[]? tableNames = (_dbControlSection.TableList != null && _dbControlSection.TableList.Length > 0)
+                    ? _dbControlSection.TableList
+                    : await dbService.GetTableNamesAsync();
+
+                if (tableNames != null && tableNames.Length > 0)
                 {
-                    IEnumerable<Dictionary<string, object>>? _dataSet = dbService.GetDataSet(tableName);
-                    if (_dataSet == null)
+                    _logger.LogInformation("Exporting data for {Count} tables: {Tables}",
+                        tableNames.Length, string.Join(", ", tableNames));
+
+                    foreach (string tableName in tableNames)
                     {
-                        Console.WriteLine("No data found.");
-                    }
-                    else
-                    {
-                        exportService.Export(tableName, _dataSet);
+                        _logger.LogInformation("Processing table: {TableName}", tableName);
+
+                        var dataSet = await dbService.GetDataSetAsync(tableName);
+                        if (dataSet == null)
+                        {
+                            _logger.LogWarning("No data found for table: {TableName}", tableName);
+                        }
+                        else
+                        {
+                            await exportService.ExportAsync(tableName, dataSet);
+                        }
                     }
                 }
-            }
-            else
-            {
-                Console.WriteLine("No table found.");
+                else
+                {
+                    _logger.LogWarning("No tables found");
+                }
 
+                if (_exControlSection.MakeToZip)
+                {
+                    await exportService.ZipFilesAsync();
+                }
+
+                _logger.LogInformation("ExportData Service End ...");
             }
-            exportService.ZipFiles();
-            Console.WriteLine("ExportData Service End ...");
-            return Task.CompletedTask;
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during export process");
+                throw;
+            }
         }
         private void LoadParameters(IConfiguration config)
         {

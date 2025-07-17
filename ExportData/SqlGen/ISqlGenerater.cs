@@ -1,14 +1,17 @@
 ﻿
-
+using ExportData.Models.Database;
 using System.Data;
 
 namespace ExportData.SqlGen
 {
     public interface ISqlGenerater
     {
-        public IDbConnection GetConnection();
-        public void CloseConnection(IDbConnection conn);
-        public string GetSqlAllTableNameList();
-        public string GetSqlRecords(string tableName);
+        IDbConnection GetConnection();
+        void CloseConnection(IDbConnection conn);
+        string GetSqlAllTableNameList();
+        string GetSqlRecords(string tableName);
+        Task<TableSchema?> GetTableSchemaAsync(IDbConnection connection, string tableName);
+        Task<IEnumerable<TableRelation>?> GetTableRelationsAsync(IDbConnection connection);
+        Task<DatabaseInfo?> GetDatabaseInfoAsync(IDbConnection connection);
     }
 }

@@ -1,0 +1,247 @@
+@page
+@model TableDetailModel
+@{
+    ViewData["Title"] = $"資料表詳細 - {Model.TableName}";
+}
+
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="/">首頁</a></li>
+                    <li class="breadcrumb-item active">@Model.TableName</li>
+                </ol>
+            </nav>
+            
+            <h1 class="mb-4">📋 資料表詳細資訊</h1>
+            <h2 class="text-primary">@Model.TableName</h2>
+        </div>
+    </div>
+
+    <form method="post">
+        <input type="hidden" asp-for="TableName" />
+        <input type="hidden" asp-for="ConnectionString" />
+        <input type="hidden" asp-for="DbType" />
+        
+        <div class="row mb-3">
+            <div class="col-md-12">
+                <div class="btn-group" role="group">
+                    <button type="submit" name="action" value="schema" class="btn btn-outline-info">
+                        🔍 載入結構資訊
+                    </button>
+                    <button type="submit" name="action" value="sample" class="btn btn-outline-success">
+                        📊 載入範例資料
+                    </button>
+                    <button type="submit" name="action" value="relations" class="btn btn-outline-warning">
+                        🔗 查看關聯性
+                    </button>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    @if (!string.IsNullOrEmpty(Model.Message))
+    {
+        <div class="row">
+            <div class="col-md-12">
+                <div class="alert @(Model.IsSuccess ? "alert-success" : "alert-danger")" role="alert">
+                    @Model.Message
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (Model.TableSchema != null)
+    {
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>📊 資料表結構</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <strong>資料表名稱:</strong> @Model.TableSchema.TableName
+                            </div>
+                            <div class="col-md-4">
+                                <strong>記錄數量:</strong> @Model.TableSchema.RowCount.ToString("N0")
+                            </div>
+                            <div class="col-md-4">
+                                <strong>欄位數量:</strong> @Model.TableSchema.Columns.Count
+                            </div>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>欄位名稱</th>
+                                        <th>資料類型</th>
+                                        <th>允許NULL</th>
+                                        <th>主鍵</th>
+                                        <th>外鍵</th>
+                                        <th>預設值</th>
+                                        <th>長度/精度</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var column in Model.TableSchema.Columns)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <strong>@column.ColumnName</strong>
+                                                @if (column.IsPrimaryKey)
+                                                {
+                                                    <span class="badge bg-warning text-dark ms-1">PK</span>
+                                                }
+                                                @if (column.IsForeignKey)
+                                                {
+                                                    <span class="badge bg-info ms-1">FK</span>
+                                                }
+                                            </td>
+                                            <td>@column.DataType</td>
+                                            <td>
+                                                @if (column.IsNullable)
+                                                {
+                                                    <span class="text-success">✓</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-danger">✗</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                @if (column.IsPrimaryKey)
+                                                {
+                                                    <span class="text-warning">✓</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                @if (column.IsForeignKey)
+                                                {
+                                                    <span class="text-info">✓</span>
+                                                    @if (!string.IsNullOrEmpty(column.ReferencedTable))
+                                                    {
+                                                        <br><small class="text-muted">→ @column.ReferencedTable.@column.ReferencedColumn</small>
+                                                    }
+                                                }
+                                            </td>
+                                            <td>
+                                                @if (!string.IsNullOrEmpty(column.DefaultValue))
+                                                {
+                                                    <code>@column.DefaultValue</code>
+                                                }
+                                            </td>
+                                            <td>
+                                                @if (column.MaxLength.HasValue)
+                                                {
+                                                    @column.MaxLength.Value.ToString()
+                                                }
+                                                else if (column.Precision.HasValue)
+                                                {
+                                                    @($"{column.Precision},{column.Scale}")
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (Model.SampleData != null && Model.SampleData.Any())
+    {
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>📊 範例資料 (前 @Model.SampleData.Count() 筆)</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover table-sm">
+                                <thead class="table-dark">
+                                    <tr>
+                                        @if (Model.SampleData.First() != null)
+                                        {
+                                            @foreach (var key in Model.SampleData.First().Keys)
+                                            {
+                                                <th>@key</th>
+                                            }
+                                        }
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var row in Model.SampleData)
+                                    {
+                                        <tr>
+                                            @foreach (var value in row.Values)
+                                            {
+                                                <td>
+                                                    @if (value == null)
+                                                    {
+                                                        <span class="text-muted fst-italic">NULL</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        @value.ToString()
+                                                    }
+                                                </td>
+                                            }
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (Model.Relations != null && Model.Relations.Any())
+    {
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>🔗 資料表關聯性</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>父資料表</th>
+                                        <th>父欄位</th>
+                                        <th>子資料表</th>
+                                        <th>子欄位</th>
+                                        <th>約束名稱</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var relation in Model.Relations)
+                                    {
+                                        <tr>
+                                            <td><strong>@relation.ParentTable</strong></td>
+                                            <td>@relation.ParentColumn</td>
+                                            <td><strong>@relation.ChildTable</strong></td>
+                                            <td>@relation.ChildColumn</td>
+                                            <td><code>@relation.ConstraintName</code></td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
