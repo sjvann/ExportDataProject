@@ -2,83 +2,65 @@
 title: '建立解析專案並唯讀盤點'
 type: 'feature'
 created: '2026-10-03'
-status: 'draft'
+status: 'in-review'
 route: 'dispatch'
+baseline_commit: '45ea42e9ef65e8cefede52392b53cdeff99a6c45'
 review_loop_iteration: 0
 context:
   - '{project-root}/_bmad-output/specs/spec-ExportDataProject/SPEC.md'
-  - '{project-root}/_bmad-output/specs/spec-ExportDataProject/functional-requirements.md'
   - '{project-root}/_bmad-output/planning-artifacts/architecture/architecture-ExportDataProject-2026-10-03/ARCHITECTURE-SPINE.md'
-  - '{project-root}/_bmad-output/planning-artifacts/ux-designs/ux-ExportDataProject-2026-10-03/EXPERIENCE.md'
 ---
 
 <frozen-after-approval reason="human-owned intent — do not modify unless human renegotiates">
 
 ## Intent
 
-**Problem:** 分析師無法建立一份本機解析專案，並以唯讀連線盤點舊庫。現有網頁把匯出當主行動，連線失敗時也沒有留下可再開啟的專案。
+**Problem:** 還沒有解析專案這份文件，後續盤點與首頁無法把結論留在同一處。
 
-**Approach:** 新增 `ExportData.Core` 持有解析專案與連接埠。`ExportDataWeb` 實作目錄讀取與 DPAPI 秘密庫，首頁在測試成功後顯示上次寫入的盤點快照。命令列繼續只做 CSV 匯出，不引用核心。
+**Approach:** 新增 `ExportData.Core`，只實作解析專案文件與原子寫入。呼叫端傳入資料夾。目錄讀取、秘密庫與首頁留到後續批次。
 
 ## Boundaries & Constraints
 
 **Always:**
-- 舊庫僅 SQLite、SQL Server、MySQL、Oracle。語句限於目錄查詢。目標框架 `net10.0`，不用 `net10.0-windows`。Kestrel 只聽 localhost。
-- 解析專案是一份 JSON，暫存檔再改名。連線字串只進同目錄 DPAPI 附檔。文件含顯示名稱、資料庫類型、識別字規則、盤點快照，以及空的推測關聯、模組、結構變更。
-- 測試成功才寫入快照。快照含表名、綱要、約略筆數、宣告關聯數、欄位數、資料表確認狀態（初始皆未看）。檢視表預設不進盤點，有獨立開關。單一表筆數失敗時該列為未知。
-- 四種失敗分開，繁體中文，可附已去除連線字串的驅動原文：連不上主機、認證失敗、沒有讀取目錄的權限、類型與連線內容不符。失敗留下無快照的專案，清單不顯示成零張表。
-- 再次打開顯示文件裡的快照，不重查筆數。空首頁標題用工作描述，不用 ExportDataWeb。
+- 文件是一份 JSON，暫存檔再改名。欄位只有顯示名稱、資料庫類型、識別字規則、是否包含檢視表、資料表快照、宣告關聯，以及空的推測關聯、模組、結構變更。
+- 資料表快照含綱要、表名、約略筆數、宣告關聯數、欄位數、確認狀態。新快照的確認狀態皆為未看。檢視表預設不進入快照。
+- 約略筆數失敗的列仍在，筆數為未知。呼叫端給定的資料夾內，同一顯示名稱已有檔案則拒絕寫入。
+- 核心不引用 ASP.NET Core、Dapper、資料庫驅動或 DPAPI。
 
 **Never:**
-- 不實作搜尋、前綴篩選、排序、下一張未看、工作台、確認命令、分析包、推測關聯、模組、UML、起草頁。
-- 目錄讀取不呼叫 `GetSqlRecords`、`GetDataSetAsync`，不讀 `SqlAllTable` 或 `SqlOneTable`。`ExportData` 不引用 `ExportData.Core`。
-- 不把連線字串寫進 JSON、日誌、錯誤訊息或回應。不自動標成已確認。
+- 文件型別沒有連線字串、密碼或儲存格。這一則不寫 `.secret`，不連資料庫，不改 `ExportData` 或 `ExportDataWeb`。
+- 不實作目錄轉接、四種連線錯誤、首頁、下一張未看、工作台或分析包。
 
 ## I/O & Edge-Case Matrix
 
 | Scenario | Input / State | Expected Output / Behavior | Error Handling |
 |----------|--------------|---------------------------|----------------|
-| 測試成功 | 合法唯讀連線 | 寫入快照與秘密附檔；清單出現資料表 | N/A |
-| 認證失敗 | 錯誤密碼 | 留下無快照專案；訊息為認證失敗 | 不顯示清單 |
-| 連不上主機 | 無法到達的主機 | 留下無快照專案；訊息為連不上主機 | 不顯示清單 |
-| 沒有目錄權限 | 連上但讀不到目錄 | 留下無快照專案；訊息為沒有讀取目錄的權限 | 不顯示清單 |
-| 類型不符 | 類型與內容不符 | 留下無快照專案；訊息為類型與連線內容不符 | 不顯示清單 |
-| 再開啟 | 已有成功快照 | 清單與文件一致，不重查筆數 | 秘密讀失敗時不把清單清成零張表 |
-| 筆數部分失敗 | 某一表筆數失敗 | 該列為未知，其他表仍在 | 不中止整份盤點 |
-| 檢視表 | 開關預設關 | 清單不含檢視表 | 打開開關才出現，且確認狀態不適用 |
+| 新專案 | 空資料夾、顯示名稱 | 寫出 `.analysis.json`，集合為空 | N/A |
+| 不含檢視表 | 一張表與一張檢視表，開關關 | 快照只有那張表 | N/A |
+| 包含檢視表 | 同上，開關開 | 兩者都在；檢視表確認狀態不適用 | N/A |
+| 筆數未知 | 某一列筆數失敗 | 該列留下，筆數為未知 | 不丟掉該列 |
+| 名稱重複 | 同資料夾已有同名檔 | 不覆寫既有檔 | 拒絕並說明 |
+| 讀回 | 剛寫入的檔 | 與寫入內容一致 | 檔案不存在則失敗，不產生空快照 |
 
 </frozen-after-approval>
 
-## Open Questions
-
-- 解析專案寫在哪裡、首頁如何開啟已有的一份 — options: 表單填本機資料夾，再開啟時指定同一路徑 (分析師自己決定位置，複製時找得到) / 固定寫入本機應用資料夾，首頁列出其中的專案 (不必選路徑，複製時要到該資料夾找)
-
 ## Code Map
 
-- `ExportData/SqlGen/ISqlGenerater.cs` -- 目錄方法可重用：`GetTableSchemaAsync`、`GetTableRelationsAsync`、`GetDatabaseInfoAsync`、`GetSqlAllTableNameList`。`GetSqlRecords` 只留給匯出。
-- `ExportData/DbService.cs` -- `GetTableSchemaAsync`、`GetTableRelationsAsync` 可被 Web 轉接器呼叫。不要走 `GetDataSetAsync`。
-- `ExportData/Models/Database/DatabaseModels.cs` -- `TableSchema`、`ColumnInfo`、`TableRelation` 是目錄形狀。快照由核心另存，不把這些型別當解析專案。
-- `ExportData/Program.cs`、`ExportData/ExportService` -- 命令列 CSV。不改匯出流程，不引用核心。
-- `ExportDataWeb/Pages/Index.cshtml` 與 `Index.cshtml.cs` -- 現以匯出為主。改成解析專案首頁。
-- `ExportDataWeb/Program.cs` -- 現無 localhost 硬綁。要改成只聽 localhost。
-- `ExportDataWeb/Properties/launchSettings.json` -- 開發位址已是 localhost，不能改成對外位址。
-- `ExportData/DeIdentificationService.cs` -- 空殼。遮罩不用它。
+- `ExportData/Models/Database/DatabaseModels.cs` -- `TableSchema`、`ColumnInfo`、`TableRelation` 是目錄形狀。核心快照另定型別，不引用這個專案。
+- `ExportData/ExportData.csproj` -- 維持現狀。這一則不改目標框架，也不加入對核心的參考。
+- `ExportDataWeb/` -- 這一則不改。
 
 ## Tasks & Acceptance
 
 **Execution:**
-- [ ] `ExportData.Core/ExportData.Core.csproj` -- 新增 `net10.0` 類別庫；定義目錄、儲存、秘密庫、分析包寫出、起草五個連接埠；實作 JSON 儲存與盤點快照 -- 核心不引用 ASP.NET、Dapper、驅動或 DPAPI
-- [ ] `ExportData.Core.Tests/ExportData.Core.Tests.csproj` -- 為 I/O 矩陣的儲存與失敗留下行為寫測試：無快照、暫存改名、文件不含連線字串、檢視表預設排除、筆數未知 -- 先紅後綠
-- [ ] `ExportData/ExportData.csproj` -- 目標框架改 `net10.0`，不加入對核心的參考 -- 與 AD-8 對齊且命令列維持獨立
-- [ ] `ExportDataWeb/ExportDataWeb.csproj` 與 `ExportDataWeb/Catalog/` -- 目標框架改 `net10.0`；目錄轉接只呼叫代碼地圖中的目錄方法；秘密庫用 `System.Security.Cryptography.ProtectedData` 10.0.12 寫同目錄附檔 -- 網頁是唯一驅動轉接器
-- [ ] `ExportDataWeb/Program.cs` 與 `ExportDataWeb/Pages/Index.cshtml` -- Kestrel 只聽 localhost；無專案時顯示工作描述與連線表單；成功顯示清單與進度初值；失敗顯示四種原因之一 -- 對應 UJ-1 的連線與盤點，不含下一張未看
-- [ ] `ExportDataProjects.sln` -- 納入核心、核心測試與 `ExportDataWeb` -- 方案目前只有命令列專案
+- [x] `ExportData.Core/ExportData.Core.csproj` -- 新增 `net10.0` 類別庫與解析專案型別、由目錄列組成快照的函式、原子寫入的儲存 -- 讓後續批次依賴同一份文件
+- [x] `ExportData.Core.Tests/ExportData.Core.Tests.csproj` -- 用 xUnit 覆蓋 I/O 矩陣 -- 先紅後綠
+- [x] `ExportDataProjects.sln` -- 納入上述兩個專案 -- 方案目前只有命令列
 
 **Acceptance Criteria:**
-- Given 命令列專案，when 建置，then 成功且不參考 `ExportData.Core`。
-- Given 網頁行程，when 檢查監聽位址，then 只有 localhost。
-- Given 測試失敗或成功，when 讀取解析專案 JSON，then 沒有連線字串或密碼。
-- Given 已成功盤點後重新開啟，when 顯示清單，then 筆數與確認狀態來自文件，且不對舊庫重查筆數。
+- Given 寫入後的 JSON，when 搜尋連線字串欄位，then 型別與檔案都沒有該欄。
+- Given 寫入中斷於暫存檔尚未改名，when 讀取正式檔，then 仍是改名前的內容或檔案不存在。
+- Given `ExportData.csproj`，when 這一則完成，then 其內容未被修改。
 
 ## Implementation Notes
 
@@ -86,13 +68,37 @@ context:
 
 ## Review Triage Log
 
+- low — `DisplayNameRules` 連前導空白也拒絕，訊息只寫結尾。`displayName != displayName.Trim()` 會擋下前導空白。直接改訊息。
+- low — 保留裝置名與過長暫存檔名會丟出未包裝的 `IOException`。日常顯示名稱不會是 `CON`。修法要另加裝置名清單與長度分支，拒絕。
+- low — 約束名稱只拒絕 null，空白仍可寫入。規格沒要求非空白約束名。修法是新的拒絕條件，拒絕。
+- low — 約略筆數的負數可寫入。規格只把空值定義為未知。修法是新的範圍檢查，拒絕。
+- low — 相同表名的目錄列可重複進快照。規格沒要求合併。修法要另做去重，拒絕。
+- low — `Save` 不重算關聯數，集合在 `Create` 之後仍可改。日常路徑是寫入後立即儲存。修法要改成不可變集合，拒絕。
+- low — `approximateRowCount` 與 `confirmationStatus` 省略時會變成 null。這和規格的未知筆數、檢視表空狀態是同一表示。不另加必填。
+- false — `Load` 不核對檔內顯示名稱。讀回規格只要求與寫入內容一致；用原顯示名稱讀回時檔名與內容相同。
+- low — 資料夾不存在時，`Save` 與 `Load` 的例外類型不同。兩者都失敗，且不會造出空快照。改訊息要加分支，拒絕。
+- false — 名稱為「寫入中斷且正式檔已存在」的測試沒有呼叫中斷的 `Save`。`Save` 在正式檔已存在時於寫暫存檔前拒絕；`DuplicateDisplayName_RefusesWithoutOverwrite` 已斷言位元組不變。
+- false — 這一則不能沿用「先寫暫存再取代既有正式檔」。規格要求同名檔拒絕覆寫，沒有取代路徑。
+- low — 當機留下的 `.tmp` 下次成功寫入不會清掉。成功路徑用新的暫存檔名。另做清理會加行為，拒絕。
+- false — 識別字規則存不下 SQL Server 定序。這一則的意圖排除目錄轉接；定序由呼叫端之後寫入，設計註記只列三種規則。
+- medium — `OrdinalIgnoreCase` 的關聯計數沒有大小寫不同的斷言。把該分支改成區分大小寫，現有 11 項測試仍會通過。依驗證缺口層的 `patch` 補測試。
+- low — 禁止秘密欄位的測試只做完整名稱相等，`DbPassword` 不會失敗。目前型別與 JSON 鍵沒有這些欄。擴充黑名單是開放清單，拒絕。
+- false — 補上推測關聯等欄位後舊檔會失敗。`UnmappedMemberHandling.Disallow` 拒絕的是多出來的 JSON 成員；舊的空物件仍可對上後來新增的可選屬性。
+- false — 快照沒有欄位型別、文件沒有版本、五個連接埠未出現。凍結的欄位清單沒有這些項目；修法是改規格或做出這一則禁止的目錄轉接。
+- low — `deferred-work.md` 用絕對路徑，且仍寫約 2300 token。這是流程紀錄，不是分析師會讀的檔。拒絕。
+- low — 未定義的資料庫類型、識別字規則、目錄種類可被轉成列舉後寫入。呼叫端要先做非法轉型。加 `Enum.IsDefined` 是新分支，拒絕。
+- low — 只含空白的綱要可寫入，之後對不上關聯。SQLite 的空字串綱要是合法值。拒絕只含空白要加條件，拒絕。
+- low — 目標路徑若是同名目錄，`File.Move` 會丟 `IOException`。顯示名稱與目錄同名不是日常路徑。拒絕。
+- low — 刪除暫存檔若失敗，會蓋掉原本的寫入錯誤。`File.Delete` 失敗不是這次測試或日常寫入會碰到的情況。加 try 會多一層，拒絕。
+- low — 無效 UTF-8 會被解碼後再解析。規格的讀回是對剛寫入的 UTF-8。改用拋錯的編碼器是新行為，拒絕。
+- low — 讀回後不檢查確認狀態是否符合種類，也不檢查關閉檢視表時仍有檢視列。這些是手改 JSON。規格的讀回是自己寫出的檔。拒絕。
+
 ## Design Notes
 
-失敗仍建立 JSON（顯示名稱與資料庫類型、無快照）並寫入秘密附檔，讓同一份專案可再測。連線字串不進 JSON。無法歸類的連線錯誤呈「類型與連線內容不符」，並附去除連線字串的原文。檔名主檔與附檔同主檔名：`.analysis.json` 與 `.secret`。同一資料夾內顯示名稱重複則拒絕並說明。清單列在這一則不能進工作台。
+檔名為 `{顯示名稱}.analysis.json`。約略筆數用可空整數，空值表示未知。確認狀態在檔內以 AD-10 的四個詞儲存：未看、草稿、已確認、略過。檢視表的確認狀態欄留空。寫入先寫同資料夾暫存檔，完成後再改成正式檔名。
 
 ## Verification
 
 **Commands:**
 - `dotnet test ExportData.Core.Tests/ExportData.Core.Tests.csproj` -- expected: 通過
-- `dotnet build ExportData/ExportData.csproj` -- expected: 成功且專案檔無 `ExportData.Core` 參考
-- `dotnet build ExportDataWeb/ExportDataWeb.csproj` -- expected: 成功
+- `dotnet build ExportData/ExportData.csproj` -- expected: 成功，且專案檔與這一則開始前相同
