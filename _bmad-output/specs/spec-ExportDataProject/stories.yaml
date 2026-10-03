@@ -1,0 +1,70 @@
+- id: "1"
+  title: 建立解析專案並唯讀盤點
+  description: >-
+    分析師可建立本機解析專案，以唯讀連線盤點一座舊庫（CAP-1、FR-1、FR-2）。
+    測試成功後才出現清單；四類連線失敗分開，失敗不顯示成零張表，再次打開仍是上次成功盤點。
+  spec_checkpoint: true
+  done_checkpoint: true
+- id: "2"
+  title: 搜尋篩選並打開下一張未看
+  description: >-
+    分析師可搜尋表名、依綱要或名稱前綴篩選、排序，並打開下一張未看的資料表（CAP-2、FR-3）。
+    下一張未看只在目前篩選與排序中尋找；沒有未看時明確告知，且不打開已確認或進行中的表。
+  spec_checkpoint: true
+  done_checkpoint: true
+- id: "3"
+  title: 工作台對照結構、範例與用途
+  description: >-
+    分析師可在同一工作台對照欄位結構、有上限的範例與表欄用途（CAP-3 的結構、範例與用途，FR-5 至 FR-8）。
+    任一塊失敗時其餘仍可用；空表不捏造範例；切到別張表前保留未儲存用途。鄰居圖留到故事 4。
+  spec_checkpoint: true
+  done_checkpoint: true
+- id: "4"
+  title: 一層 crow's foot 鄰居圖
+  description: >-
+    分析師可看以目前表為中心的一層 crow's foot 鄰居圖，基數依鍵的性質（CAP-5、FR-11 至 FR-13），補上 CAP-3 的第三塊。
+    每條宣告關聯都能在目錄外鍵找到；未明不畫成多對多或星號；沒有關聯時只有目前表。屬性顯示只有僅鍵。
+  spec_checkpoint: true
+  done_checkpoint: true
+- id: "5"
+  title: 確認、略過與進度
+  description: >-
+    分析師可把有用途的欄位標成已確認或略過，並看到由欄位彙總的進度（CAP-4、FR-9、FR-10）。
+    空白用途不能確認，沒有自動程序能標成已確認，檢視表不計入分母；寫下用途後是否離開未看仍不代選。
+  spec_checkpoint: true
+  done_checkpoint: true
+- id: "6"
+  title: 重新讀取並保留結論
+  description: >-
+    分析師可對同一解析專案重新讀取結構，仍在的欄位保留用途、依據與確認狀態（FR-4、AD-9）。
+    對齊只依綱要、表名、欄名，整份成功才寫入；端點已消失留到故事 8。
+  spec_checkpoint: true
+  done_checkpoint: true
+- id: "7"
+  title: 匯出分析包
+  description: >-
+    分析師可匯出選定範圍的分析包，含封面、資料字典、實體關係圖與未確認清單（CAP-6、FR-19 的鄰居範圍與手動勾選、FR-20 至 FR-23）。
+    抽樣列與解析專案一致，草稿不被印成已確認，包內無連線密碼；遮罩中間的固定符號不代選。
+  spec_checkpoint: true
+  done_checkpoint: true
+- id: "8"
+  title: 推測關聯
+  description: >-
+    系統可依名稱規則提出推測關聯，分析師可接受、拒絕或手動指定兩欄（CAP-7、FR-14）。
+    接受前不上圖，拒絕後同一對不再提出，舊庫外鍵數量不變；端點消失的已接受推測關聯在此標成端點已消失。
+  spec_checkpoint: true
+  done_checkpoint: true
+- id: "9"
+  title: 模組與 UML
+  description: >-
+    分析師可用綱要、名稱前綴或手動勾選定義模組，查看該群的實體關係圖，並把同一範圍投影成沒有操作的 UML 類別圖（CAP-8、FR-15、FR-16）。
+    模組外的另一端不畫出但列出；UML 不能造出實體關係圖沒有的關係。
+  spec_checkpoint: true
+  done_checkpoint: true
+- id: "10"
+  title: 起草用途
+  description: >-
+    分析師可對一張表或一個欄位起草用途與依據（CAP-9、FR-17、FR-18）。
+    證據不足則不寫用途且狀態維持未看，已確認與略過不被覆蓋；預設不外送範例，是否必須離線運作不代選。
+  spec_checkpoint: true
+  done_checkpoint: true
