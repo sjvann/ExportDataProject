@@ -10,10 +10,12 @@ namespace ExportDataWeb.Pages
     public class TableDetailModel : PageModel
     {
         private readonly ILogger<TableDetailModel> _logger;
+        private readonly ILoggerFactory _loggerFactory;
 
-        public TableDetailModel(ILogger<TableDetailModel> logger)
+        public TableDetailModel(ILogger<TableDetailModel> logger, ILoggerFactory loggerFactory)
         {
             _logger = logger;
+            _loggerFactory = loggerFactory;
         }
 
         [BindProperty(SupportsGet = true)]
@@ -58,7 +60,7 @@ namespace ExportDataWeb.Pages
                     Size = 10 // For sample data
                 };
 
-                var dbService = new DbService(dbConfig, _logger.CreateLogger<DbService>());
+                var dbService = new DbService(dbConfig, _loggerFactory.CreateLogger<DbService>());
 
                 switch (action)
                 {

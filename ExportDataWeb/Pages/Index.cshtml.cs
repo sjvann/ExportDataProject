@@ -10,12 +10,14 @@ namespace ExportDataWeb.Pages;
 public class IndexModel : PageModel
 {
     private readonly ILogger<IndexModel> _logger;
+    private readonly ILoggerFactory _loggerFactory;
     private readonly IDbService _dbService;
     private readonly IExportService _exportService;
 
-    public IndexModel(ILogger<IndexModel> logger, IDbService dbService, IExportService exportService)
+    public IndexModel(ILogger<IndexModel> logger, ILoggerFactory loggerFactory, IDbService dbService, IExportService exportService)
     {
         _logger = logger;
+        _loggerFactory = loggerFactory;
         _dbService = dbService;
         _exportService = exportService;
     }
@@ -83,7 +85,7 @@ public class IndexModel : PageModel
     {
         try
         {
-            var dbService = new ExportData.DbService(DbConfig, _logger.CreateLogger<ExportData.DbService>());
+            var dbService = new ExportData.DbService(DbConfig, _loggerFactory.CreateLogger<ExportData.DbService>());
             var dbInfo = await dbService.GetDatabaseInfoAsync();
 
             if (dbInfo != null)
@@ -109,7 +111,7 @@ public class IndexModel : PageModel
     {
         try
         {
-            var dbService = new ExportData.DbService(DbConfig, _logger.CreateLogger<ExportData.DbService>());
+            var dbService = new ExportData.DbService(DbConfig, _loggerFactory.CreateLogger<ExportData.DbService>());
 
             // Get database info
             DatabaseInfo = await dbService.GetDatabaseInfoAsync();
@@ -139,15 +141,22 @@ public class IndexModel : PageModel
     {
         try
         {
-            var dbService = new ExportData.DbService(DbConfig, _logger.CreateLogger<ExportData.DbService>());
+            var dbService = new ExportData.DbService(DbConfig, _loggerFactory.CreateLogger<ExportData.DbService>());
             var exportService = new ExportData.ExportService(ExConfig,
                 new ConfigDeIdentification { DeIdentification = false },
-                _logger.CreateLogger<ExportData.ExportService>());
+                _loggerFactory.CreateLogger<ExportData.ExportService>());
 
-            // Create export directory if not exists
-            if (!Directory.Exists(ExConfig.ExportPath))
+            string? exportPath = ExConfig.ExportPath;
+            if (string.IsNullOrWhiteSpace(exportPath))
             {
-                Directory.CreateDirectory(ExConfig.ExportPath);
+                Message = "❌ 請指定匯出路徑";
+                IsSuccess = false;
+                return;
+            }
+
+            if (!Directory.Exists(exportPath))
+            {
+                Directory.CreateDirectory(exportPath);
             }
 
             // Get tables to export
