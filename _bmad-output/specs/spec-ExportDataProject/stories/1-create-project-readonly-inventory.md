@@ -2,7 +2,7 @@
 title: '建立解析專案並唯讀盤點'
 type: 'feature'
 created: '2026-10-03'
-status: 'in-review'
+status: 'done'
 route: 'dispatch'
 baseline_commit: '45ea42e9ef65e8cefede52392b53cdeff99a6c45'
 review_loop_iteration: 0

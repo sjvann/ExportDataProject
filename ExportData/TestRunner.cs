@@ -13,17 +13,15 @@ namespace ExportData
                 builder.AddConsole().SetMinimumLevel(LogLevel.Information);
             });
 
-            var logger = loggerFactory.CreateLogger<TestRunner>();
-            
             Console.WriteLine("=== 資料庫匯出工具測試 ===\n");
 
             // Test SQLite
-            await TestSQLiteAsync(logger);
+            await TestSQLiteAsync(loggerFactory);
             
             Console.WriteLine("\n測試完成！");
         }
 
-        private static async Task TestSQLiteAsync(ILogger logger)
+        private static async Task TestSQLiteAsync(ILoggerFactory loggerFactory)
         {
             Console.WriteLine("📊 測試 SQLite 功能");
             Console.WriteLine("==================");
@@ -42,7 +40,7 @@ namespace ExportData
                     Size = 5
                 };
 
-                var dbService = new DbService(dbConfig, logger.CreateLogger<DbService>());
+                var dbService = new DbService(dbConfig, loggerFactory.CreateLogger<DbService>());
 
                 // Test database info
                 Console.WriteLine("🔍 測試資料庫資訊...");

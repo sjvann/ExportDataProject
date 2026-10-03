@@ -95,7 +95,11 @@ rootCommand.SetHandler(async (bool interactive, string? configFile, bool test) =
 
             if (confirm == "y" || confirm == "yes" || confirm == "是")
             {
-                var mainService = new MainService(dbConfig, exConfig, host.Services.GetRequiredService<ILogger<MainService>>());
+                var mainService = new MainService(
+                    dbConfig,
+                    exConfig,
+                    host.Services.GetRequiredService<ILogger<MainService>>(),
+                    host.Services.GetRequiredService<ILoggerFactory>());
                 await mainService.RunAsync();
             }
             else

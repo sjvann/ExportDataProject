@@ -8,26 +8,29 @@ namespace ExportData
 {
     public class MainService
     {
-        private readonly ConfigDbControlSection? _dbControlSection;
-        private readonly ConfigExControlSection? _exControlSection;
-        private readonly ConfigDeIdentification? _deIdentification;
+        private ConfigDbControlSection? _dbControlSection;
+        private ConfigExControlSection? _exControlSection;
+        private ConfigDeIdentification? _deIdentification;
         private readonly ILogger<MainService> _logger;
+        private readonly ILoggerFactory _loggerFactory;
 
         // Constructor for configuration-based mode
-        public MainService(IConfiguration config, ILogger<MainService> logger)
+        public MainService(IConfiguration config, ILogger<MainService> logger, ILoggerFactory loggerFactory)
         {
             _logger = logger;
+            _loggerFactory = loggerFactory;
             _logger.LogInformation("ExportData Service Start ...");
             LoadParameters(config);
         }
 
         // Constructor for interactive mode
-        public MainService(ConfigDbControlSection dbConfig, ConfigExControlSection exConfig, ILogger<MainService> logger)
+        public MainService(ConfigDbControlSection dbConfig, ConfigExControlSection exConfig, ILogger<MainService> logger, ILoggerFactory loggerFactory)
         {
             _dbControlSection = dbConfig;
             _exControlSection = exConfig;
             _deIdentification = new ConfigDeIdentification { DeIdentification = false }; // Default
             _logger = logger;
+            _loggerFactory = loggerFactory;
             _logger.LogInformation("ExportData Service Start (Interactive Mode) ...");
         }
         public async Task RunAsync()
@@ -40,8 +43,8 @@ namespace ExportData
 
             try
             {
-                var dbService = new DbService(_dbControlSection, _logger.CreateLogger<DbService>());
-                var exportService = new ExportService(_exControlSection, _deIdentification, _logger.CreateLogger<ExportService>());
+                var dbService = new DbService(_dbControlSection, _loggerFactory.CreateLogger<DbService>());
+                var exportService = new ExportService(_exControlSection, _deIdentification, _loggerFactory.CreateLogger<ExportService>());
 
                 string[]? tableNames = (_dbControlSection.TableList != null && _dbControlSection.TableList.Length > 0)
                     ? _dbControlSection.TableList
