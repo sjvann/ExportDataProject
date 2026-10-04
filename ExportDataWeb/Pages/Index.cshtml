@@ -37,7 +37,7 @@
         <button type="button" data-view="inventory" aria-pressed="false" tabindex="-1">資料表</button>
     </div>
 
-    <form method="post" id="export-form" class="workspace-grid">
+    <form method="post" asp-page="/Index" id="export-form" class="workspace-grid">
         <div class="pane pane-setup is-active" id="pane-setup">
             <div class="tabs" data-tabs>
                 <div class="tablist" role="tablist" aria-label="設定">
@@ -312,13 +312,13 @@
 
             <div class="command-bar">
                 <div id="connection-test" @(Model.HasDbType ? null : "hidden")>
-                    <button type="submit" name="action" value="test" class="btn btn-ghost" id="test-connection">測試連線</button>
+                    <button type="submit" name="operation" value="test" asp-page="/Index" class="btn btn-ghost" id="test-connection">測試連線</button>
                 </div>
-                <button type="submit" name="action" value="analyze" class="btn btn-primary">分析結構</button>
-                <button type="submit" name="action" value="export" class="btn btn-accent">匯出 CSV</button>
+                <button type="submit" name="operation" value="analyze" asp-page="/Index" class="btn btn-primary">分析結構</button>
+                <button type="submit" name="operation" value="export" asp-page="/Index" class="btn btn-accent">匯出 CSV</button>
                 @if (Model.IsConnected)
                 {
-                    <button type="submit" name="action" value="disconnect" class="btn btn-ghost btn-disconnect" id="disconnect">取消連線</button>
+                    <button type="submit" name="operation" value="disconnect" asp-page="/Index" formnovalidate class="btn btn-ghost btn-disconnect" id="disconnect">取消連線</button>
                 }
             </div>
         </div>

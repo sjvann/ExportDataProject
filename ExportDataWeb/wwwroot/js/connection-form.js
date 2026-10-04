@@ -77,6 +77,14 @@
         }
     }
 
+    function pageUrl(handler) {
+        const raw = form.getAttribute("action");
+        const path = raw && raw.charAt(0) === "/" ? raw : window.location.pathname;
+        const url = new URL(path, window.location.origin);
+        url.searchParams.set("handler", handler);
+        return url;
+    }
+
     function rawMode() {
         const selected = document.querySelector('input[name="Connection.UseRawConnectionString"]:checked');
         return selected ? selected.value === "true" : false;
@@ -204,8 +212,7 @@
         }
 
         previewController = new AbortController();
-        const url = new URL(form.getAttribute("action") || window.location.pathname, window.location.origin);
-        url.searchParams.set("handler", "Preview");
+        const url = pageUrl("Preview");
 
         try {
             const response = await fetch(url, {
@@ -333,8 +340,7 @@
         status.className = "form-text";
         status.textContent = "正在讀取資料庫…";
         setListButtonBusy(true);
-        const url = new URL(form.getAttribute("action") || window.location.pathname, window.location.origin);
-        url.searchParams.set("handler", "Databases");
+        const url = pageUrl("Databases");
 
         try {
             const response = await fetch(url, {

@@ -184,9 +184,9 @@ public class IndexModel : PageModel
         return new JsonResult(new { ok = true, databases = listed.Names });
     }
 
-    public async Task<IActionResult> OnPostAsync(string action)
+    public async Task<IActionResult> OnPostAsync(string operation)
     {
-        if (string.Equals(action, "disconnect", StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(operation, "disconnect", StringComparison.OrdinalIgnoreCase))
         {
             ModelState.Clear();
             ClearWorkspace();
@@ -235,7 +235,7 @@ public class IndexModel : PageModel
 
         try
         {
-            switch (action)
+            switch (operation)
             {
                 case "test":
                     Message = FormatConnected(DatabaseInfo);
@@ -259,7 +259,7 @@ public class IndexModel : PageModel
         }
         catch (Exception ex)
         {
-            _logger.LogError("Operation {Action} failed for {DbType}: {Error}", action, DbConfig.DbType, Describe(ex));
+            _logger.LogError("Operation {Action} failed for {DbType}: {Error}", operation, DbConfig.DbType, Describe(ex));
             Message = "操作失敗。 " + Describe(ex);
             IsSuccess = false;
         }
