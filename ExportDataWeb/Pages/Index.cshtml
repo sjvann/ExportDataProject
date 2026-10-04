@@ -213,7 +213,7 @@
                                             <button type="button" class="btn btn-ghost" id="toggle-password" aria-pressed="false" aria-controls="Connection_Password">顯示</button>
                                         </div>
                                         <input type="hidden" id="PasswordState" name="PasswordState" value="@(Model.PasswordRemembered ? "kept" : null)" />
-                                        <div class="form-text" id="password-memory-note">@(Model.PasswordRemembered ? "已記住密碼。留白會沿用，重新輸入則更換。" : "測試連線後畫面會重新整理，密碼不會留在欄位裡。同一工作階段會記住，可直接分析或匯出。")</div>
+                                        <div class="form-text" id="password-memory-note">@(Model.PasswordRemembered ? "已記住密碼。留白會沿用，重新輸入則更換。" : "密碼不會留在欄位裡。連線成功後會記住，直到你按「取消連線」。")</div>
                                     </div>
                                 </div>
 
@@ -305,12 +305,21 @@
                 </div>
             </div>
 
+            @if (Model.IsConnected)
+            {
+                <p class="connection-hold" id="connection-hold">連線保持中。換到其他頁面再回來仍會連著，直到按「取消連線」。</p>
+            }
+
             <div class="command-bar">
                 <div id="connection-test" @(Model.HasDbType ? null : "hidden")>
                     <button type="submit" name="action" value="test" class="btn btn-ghost" id="test-connection">測試連線</button>
                 </div>
                 <button type="submit" name="action" value="analyze" class="btn btn-primary">分析結構</button>
                 <button type="submit" name="action" value="export" class="btn btn-accent">匯出 CSV</button>
+                @if (Model.IsConnected)
+                {
+                    <button type="submit" name="action" value="disconnect" class="btn btn-ghost btn-disconnect" id="disconnect">取消連線</button>
+                }
             </div>
         </div>
 
@@ -369,6 +378,27 @@
                             }
                         </tbody>
                     </table>
+                </div>
+            }
+            else if (Model.InventoryFailed)
+            {
+                <div class="empty-panel">
+                    <h2>清單暫時讀不到</h2>
+                    <p>連線還在。可再按一次「分析結構」。</p>
+                </div>
+            }
+            else if (Model.AnalysisFoundNone)
+            {
+                <div class="empty-panel">
+                    <h2>沒有找到資料表</h2>
+                    <p>這次分析沒有列出資料表。連線仍保持，可調整條件後再分析。</p>
+                </div>
+            }
+            else if (Model.IsConnected)
+            {
+                <div class="empty-panel">
+                    <h2>已連線</h2>
+                    <p>按「分析結構」列出資料表。換頁再回來也會保持連線，直到你按「取消連線」。</p>
                 </div>
             }
             else

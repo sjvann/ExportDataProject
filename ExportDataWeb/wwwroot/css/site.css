@@ -283,9 +283,21 @@ h3,
   display: none;
 }
 
+.connection-hold {
+  flex: none;
+  margin: 0;
+  padding: 8px 12px 0;
+  color: var(--color-muted-foreground);
+  font-size: 0.875rem;
+}
+
 .command-bar .btn {
   flex: 1;
   min-height: 40px;
+}
+
+.command-bar .btn-disconnect {
+  flex: 0 0 auto;
 }
 
 .btn {

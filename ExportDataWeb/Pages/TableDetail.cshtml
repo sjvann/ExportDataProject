@@ -32,10 +32,19 @@
         </div>
     }
 
+    @if (!Model.HasConnection || string.IsNullOrWhiteSpace(Model.TableName))
+    {
+        var missingTable = string.IsNullOrWhiteSpace(Model.TableName);
+        <div class="empty-panel">
+            <h2>@(missingTable ? "沒有資料表" : "尚未連線")</h2>
+            <p>@(missingTable ? "請從工作台的清單開啟一張資料表。" : "請先回工作台連上資料庫。連線會保留到你按「取消連線」。")</p>
+            <a class="btn btn-primary" href="/">回工作台</a>
+        </div>
+    }
+    else
+    {
     <form method="post" class="detail-form">
         <input type="hidden" asp-for="TableName" />
-        <input type="hidden" asp-for="ConnectionString" />
-        <input type="hidden" asp-for="DbType" />
 
         <div class="tabs" data-tabs>
             <div class="tablist" role="tablist" aria-label="資料表內容">
@@ -126,9 +135,9 @@
                 else
                 {
                     <div class="empty-panel">
-                        <h2>結構</h2>
-                        <p>欄位名稱、型別與鍵別會列在左側，點一下就在右側看完整定義。</p>
-                        <button type="submit" name="action" value="schema" class="btn btn-primary">載入結構</button>
+                        <h2>結構還沒載入</h2>
+                        <p>開啟資料表時會直接讀取欄位。這次沒有讀到，可以再試一次。</p>
+                        <button type="submit" name="action" value="schema" class="btn btn-primary">重新載入結構</button>
                     </div>
                 }
             </div>
@@ -240,4 +249,5 @@
             </div>
         </div>
     </form>
+    }
 </div>

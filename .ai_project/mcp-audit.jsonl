@@ -29,3 +29,6 @@
 {"utc":"2026-10-04T03:19:57.6702639+00:00","tool":"build","ok":true,"ms":8707,"args":{"mode":"one","path":"ExportDataWeb"}}
 {"utc":"2026-10-04T03:20:11.3473479+00:00","tool":"start_service","ok":true,"ms":10356,"args":{"id":"exportdataweb"}}
 {"utc":"2026-10-04T03:27:04.6274474+00:00","tool":"duty_summary","ok":false,"ms":252,"args":{}}
+{"utc":"2026-10-04T04:00:20.8551772+00:00","tool":"build","ok":true,"ms":6292,"args":{"mode":"one","path":"ExportDataWeb"}}
+{"utc":"2026-10-04T04:00:20.8645267+00:00","tool":"list_services","ok":true,"ms":0,"args":{}}
+{"utc":"2026-10-04T04:00:35.7951939+00:00","tool":"start_service","ok":true,"ms":7764,"args":{"id":"exportdataweb"}}

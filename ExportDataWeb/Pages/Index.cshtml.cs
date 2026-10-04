@@ -4,6 +4,7 @@ using ExportData.Models.Database;
 using ExportData.Models.EnumType;
 using ExportData.Services;
 using ExportData.SqlGen;
+using ExportDataWeb.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
@@ -48,6 +49,14 @@ public class IndexModel : PageModel
     public string? PasswordState { get; set; }
 
     public bool PasswordRemembered { get; private set; }
+
+    public bool IsConnected { get; private set; }
+
+    public bool InventoryFailed { get; private set; }
+
+    public bool AnalysisFoundNone => Tables is { Length: 0 };
+
+    private bool _openedThisRequest;
 
     private const string PasswordSessionKey = "exportdata.connection.password";
     private const string IdentitySessionKey = "exportdata.connection.identity";
@@ -107,16 +116,25 @@ public class IndexModel : PageModel
 
     public bool IsFieldError(string fieldId) => ErrorField == fieldId;
 
-    public void OnGet()
+    public async Task OnGetAsync()
     {
-        DbConfig.Size = 100;
-        DbConfig.TableType = EnumTableType.Table;
-        ExConfig.ExportPath = @"c:\temp";
-        ExConfig.MakeToZip = true;
-        ExConfig.ZipFileName = "ExportData";
-        Connection.TrustServerCertificate = true;
         LoadDrivers();
+        var saved = WorkspaceConnection.Read(HttpContext.Session);
+        if (saved == null)
+        {
+            ApplyFreshDefaults();
+            return;
+        }
+
+        saved.CopyTo(DbConfig, Connection, ExConfig);
+        IsConnected = true;
         PasswordRemembered = HasRememberedPassword();
+        RememberMaskedConnection();
+        await ResumeInventoryAsync(saved);
+        if (!Connection.UseRawConnectionString)
+        {
+            DbConfig.ConnectionString = null;
+        }
     }
 
     public IActionResult OnPostPreview()
@@ -168,21 +186,33 @@ public class IndexModel : PageModel
 
     public async Task<IActionResult> OnPostAsync(string action)
     {
+        if (string.Equals(action, "disconnect", StringComparison.OrdinalIgnoreCase))
+        {
+            ModelState.Clear();
+            ClearWorkspace();
+            ApplyFreshDefaults();
+            LoadDrivers();
+            Message = "已取消連線。";
+            IsSuccess = true;
+            return Page();
+        }
+
         LoadDrivers();
         AdoptRememberedPassword();
+        IsConnected = WorkspaceConnection.Read(HttpContext.Session) != null;
         if (HasError("Port"))
         {
             Message = "連接埠必須是 1 到 65535 的整數";
             ErrorField = "Connection_Port";
             IsSuccess = false;
-            return Page();
+            return await ViewAsync();
         }
 
         if (!ModelState.IsValid)
         {
             Message = "請檢查輸入的資料是否正確";
             IsSuccess = false;
-            return Page();
+            return await ViewAsync();
         }
 
         var applied = DbConnectionComposer.Apply(DbConfig, Connection);
@@ -191,15 +221,17 @@ public class IndexModel : PageModel
             Message = applied.Error;
             ErrorField = applied.FieldId;
             IsSuccess = false;
-            return Page();
+            return await ViewAsync();
         }
 
         RememberMaskedConnection();
 
         if (!await OpenConnectionAsync())
         {
-            return Page();
+            return await ViewAsync();
         }
+
+        RememberWorkspaceKeepingAnalysis();
 
         try
         {
@@ -211,6 +243,10 @@ public class IndexModel : PageModel
                     break;
                 case "analyze":
                     await AnalyzeDatabaseAsync();
+                    if (Tables is { Length: > 0 })
+                    {
+                        RememberWorkspace(analyzed: true);
+                    }
                     break;
                 case "export":
                     await ExportDataAsync();
@@ -228,7 +264,7 @@ public class IndexModel : PageModel
             IsSuccess = false;
         }
 
-        return Page();
+        return await ViewAsync();
     }
 
     private async Task<bool> OpenConnectionAsync()
@@ -375,6 +411,173 @@ public class IndexModel : PageModel
             _logger.LogError("Export failed for {DbType}: {Error}", DbConfig.DbType, Describe(ex));
             Message = "匯出失敗。 " + Describe(ex);
             IsSuccess = false;
+        }
+    }
+
+    private async Task<IActionResult> ViewAsync()
+    {
+        await EnsureInventoryAsync();
+        ConcealPostedSecrets();
+        return Page();
+    }
+
+    private void ApplyFreshDefaults()
+    {
+        DbConfig = new ConfigDbControlSection
+        {
+            Size = 100,
+            TableType = EnumTableType.Table
+        };
+        Connection = new DbConnectionForm
+        {
+            TrustServerCertificate = true
+        };
+        ExConfig = new ConfigExControlSection
+        {
+            ExportPath = @"c:\temp",
+            MakeToZip = true,
+            ZipFileName = "ExportData"
+        };
+        PasswordRemembered = false;
+        IsConnected = false;
+        InventoryFailed = false;
+        MaskedConnectionString = null;
+        Tables = null;
+        DatabaseInfo = null;
+    }
+
+    private void ClearWorkspace()
+    {
+        WorkspaceConnection.Clear(HttpContext.Session);
+        HttpContext.Session.Remove(PasswordSessionKey);
+        HttpContext.Session.Remove(IdentitySessionKey);
+    }
+
+    private void RememberWorkspaceKeepingAnalysis()
+    {
+        var snapshot = WorkspaceConnection.Capture(DbConfig, Connection, ExConfig);
+        var previous = WorkspaceConnection.Read(HttpContext.Session);
+        snapshot.Analyzed = previous != null && previous.Analyzed && previous.SameAnalysis(snapshot);
+        snapshot.Write(HttpContext.Session);
+        IsConnected = true;
+        _openedThisRequest = true;
+    }
+
+    private void RememberWorkspace(bool analyzed)
+    {
+        var snapshot = WorkspaceConnection.Capture(DbConfig, Connection, ExConfig);
+        snapshot.Analyzed = analyzed;
+        snapshot.Write(HttpContext.Session);
+        IsConnected = true;
+    }
+
+    private async Task EnsureInventoryAsync()
+    {
+        if (!_openedThisRequest || Tables != null)
+        {
+            return;
+        }
+
+        var saved = WorkspaceConnection.Read(HttpContext.Session);
+        if (saved is not { Analyzed: true })
+        {
+            return;
+        }
+
+        var dbService = new ExportData.DbService(saved.ToDbConfig(), _loggerFactory.CreateLogger<ExportData.DbService>());
+        var names = await dbService.GetTableNamesAsync();
+        if (names != null)
+        {
+            Tables = names;
+        }
+    }
+
+    private async Task ResumeInventoryAsync(WorkspaceConnection saved)
+    {
+        var config = saved.ToDbConfig();
+        if (!await TryReadDatabaseInfoAsync(config))
+        {
+            if (saved.Analyzed)
+            {
+                InventoryFailed = true;
+                Message ??= "連線設定還在，但重新讀取資料庫失敗。可再按一次「分析結構」。";
+                IsSuccess = false;
+            }
+
+            return;
+        }
+
+        if (!saved.Analyzed)
+        {
+            return;
+        }
+
+        var dbService = new ExportData.DbService(config, _loggerFactory.CreateLogger<ExportData.DbService>());
+        Tables = await dbService.GetTableNamesAsync();
+        if (Tables == null)
+        {
+            InventoryFailed = true;
+            Message = "連線設定還在，但重新讀取資料表清單失敗。可再按一次「分析結構」。";
+            IsSuccess = false;
+        }
+    }
+
+    private async Task<bool> TryReadDatabaseInfoAsync(ConfigDbControlSection config)
+    {
+        if (config.DbType is not { } dbType)
+        {
+            return false;
+        }
+
+        var driver = DatabaseDriverCatalog.Probe(dbType);
+        if (!driver.Installed)
+        {
+            Message = $"尚未載入 {driver.DisplayName} 驅動程式。請下載安裝後重新啟動工具。";
+            DriverDownloadUrl = driver.DownloadUrl;
+            return false;
+        }
+
+        var provider = DbChoicer.ChoiceProverder(config);
+        if (provider == null)
+        {
+            return false;
+        }
+
+        try
+        {
+            using var connection = provider.GetConnection();
+            try
+            {
+                DatabaseInfo = await provider.GetDatabaseInfoAsync(connection);
+            }
+            catch (Exception ex) when (!IsDriverLoadFailure(ex))
+            {
+                _logger.LogError("Resumed {DbType} but database info failed: {Error}", dbType, Describe(ex));
+                DatabaseInfo = null;
+            }
+
+            return true;
+        }
+        catch (Exception ex) when (IsDriverLoadFailure(ex))
+        {
+            _logger.LogError("Driver load failed while resuming {DbType}: {Error}", dbType, ex.GetType().Name);
+            Message = $"無法載入 {driver.DisplayName} 驅動程式。請下載安裝後重新啟動工具。";
+            DriverDownloadUrl = driver.DownloadUrl;
+            return false;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError("Resumed connection failed for {DbType}: {Error}", dbType, Describe(ex));
+            return false;
+        }
+    }
+
+    private void ConcealPostedSecrets()
+    {
+        Connection.Password = null;
+        if (!Connection.UseRawConnectionString)
+        {
+            DbConfig.ConnectionString = null;
         }
     }
 

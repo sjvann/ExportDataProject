@@ -1,7 +1,6 @@
 using ExportData;
-using ExportData.Models.Config;
 using ExportData.Models.Database;
-using ExportData.Models.EnumType;
+using ExportDataWeb.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
@@ -21,33 +20,35 @@ namespace ExportDataWeb.Pages
         [BindProperty(SupportsGet = true)]
         public string TableName { get; set; } = string.Empty;
 
-        [BindProperty]
-        public string ConnectionString { get; set; } = string.Empty;
-
-        [BindProperty]
-        public string DbType { get; set; } = "SqlServer";
-
         public string? Message { get; set; }
         public bool IsSuccess { get; set; }
+        public bool HasConnection { get; private set; }
         public string ActivePanel { get; private set; } = "schema";
         public TableSchema? TableSchema { get; set; }
         public IEnumerable<Dictionary<string, object>>? SampleData { get; set; }
         public IEnumerable<TableRelation>? Relations { get; set; }
 
-        public void OnGet()
+        public async Task OnGetAsync()
         {
-            if (string.IsNullOrEmpty(TableName))
+            if (string.IsNullOrWhiteSpace(TableName))
             {
-                Message = "請指定資料表名稱";
-                IsSuccess = false;
+                return;
             }
+
+            var dbService = OpenSavedConnection();
+            if (dbService == null)
+            {
+                return;
+            }
+
+            await LoadSchemaAsync(dbService, announce: false);
         }
 
         public async Task<IActionResult> OnPostAsync(string action)
         {
-            if (string.IsNullOrEmpty(TableName) || string.IsNullOrEmpty(ConnectionString))
+            if (string.IsNullOrWhiteSpace(TableName))
             {
-                Message = "請提供完整的資料表名稱和連線資訊";
+                Message = "請指定資料表名稱";
                 IsSuccess = false;
                 return Page();
             }
@@ -57,21 +58,18 @@ namespace ExportDataWeb.Pages
                 ActivePanel = action;
             }
 
+            var dbService = OpenSavedConnection();
+            if (dbService == null)
+            {
+                return Page();
+            }
+
             try
             {
-                var dbConfig = new ConfigDbControlSection
-                {
-                    ConnectionString = ConnectionString,
-                    DbType = Enum.Parse<EnumDbType>(DbType),
-                    Size = 10 // For sample data
-                };
-
-                var dbService = new DbService(dbConfig, _loggerFactory.CreateLogger<DbService>());
-
                 switch (action)
                 {
                     case "schema":
-                        await LoadSchemaAsync(dbService);
+                        await LoadSchemaAsync(dbService, announce: true);
                         break;
                     case "sample":
                         await LoadSampleDataAsync(dbService);
@@ -95,15 +93,35 @@ namespace ExportDataWeb.Pages
             return Page();
         }
 
-        private async Task LoadSchemaAsync(DbService dbService)
+        private DbService? OpenSavedConnection()
+        {
+            var saved = WorkspaceConnection.Read(HttpContext.Session);
+            if (saved == null)
+            {
+                HasConnection = false;
+                IsSuccess = false;
+                return null;
+            }
+
+            HasConnection = true;
+            var config = saved.ToDbConfig();
+            config.Size = 10;
+            return new DbService(config, _loggerFactory.CreateLogger<DbService>());
+        }
+
+        private async Task LoadSchemaAsync(DbService dbService, bool announce)
         {
             try
             {
                 TableSchema = await dbService.GetTableSchemaAsync(TableName);
-                
+
                 if (TableSchema != null)
                 {
-                    Message = $"已載入資料表 {TableName} 的結構";
+                    if (announce)
+                    {
+                        Message = $"已載入資料表 {TableName} 的結構";
+                    }
+
                     IsSuccess = true;
                 }
                 else
