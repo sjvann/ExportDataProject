@@ -3,7 +3,7 @@
 此檔由 AI_Project 控制台在開啟或重新掃描工作區時產生，下次會覆寫，請不要手改。
 權威來源：各專案檔的 `Description`／套件 `description`，或工作區 `ai-project.json` 的 `projects`。沒有該欄就留空，不讀 README。
 
-工作區：**ExportDataProject**。已有描述 0／4。
+工作區：**ExportDataProject**。已有描述 0／5。
 
 ## ExportData.Core.Tests
 
@@ -16,6 +16,12 @@
 | 專案 | 類型 | 用途 | 來源 |
 |------|------|------|------|
 | ExportData.Core | 函式庫 | （缺） | — |
+
+## ExportData.Tests
+
+| 專案 | 類型 | 用途 | 來源 |
+|------|------|------|------|
+| ExportData.Tests | 測試 | （缺） | — |
 
 ## ExportDataWeb
 
@@ -35,6 +41,7 @@
 
 - `ExportData.Core.Tests`（ExportData.Core.Tests）
 - `ExportData.Core`（ExportData.Core）
+- `ExportData.Tests`（ExportData.Tests）
 - `ExportDataWeb`（ExportDataWeb）
 - `ExportData`（ExportData）
 
