@@ -1,7 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-labelledby="title desc">
-  <title id="title">«</title>
-  <desc id="desc">É(:ñÍ•}rh<<ÚóÒ r¹Jh:òº„M(¼½h:É(:úr•
-„Œ</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img">
+  <title>æåº«</title>
+  <desc>App icon. Navy tile, white table grid, green confirmed cell. For favicon, app icon, and small marks on light backgrounds.</desc>
   <rect width="32" height="32" rx="8" fill="#1E3A5F"/>
   <path fill="none" stroke="#F8FAFC" stroke-width="1.75" stroke-linecap="square" d="M8 12h16M8 20h16M16 8v12"/>
   <rect x="17.15" y="21.15" width="6.7" height="6.7" rx="1.4" fill="#059669"/>

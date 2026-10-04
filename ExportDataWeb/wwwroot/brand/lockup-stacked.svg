@@ -1,11 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 148" role="img" aria-labelledby="title desc">
-  <title id="title">«</title>
-  <desc id="desc">ôD:(
-1((¼¹b-ÏÉ(®z“	P„ôHb</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 148" role="img">
+  <title>æåº«</title>
+  <desc>Stacked lockup for square avatars and app lists.</desc>
   <rect x="32" y="8" width="64" height="64" rx="14" fill="#1E3A5F"/>
   <path fill="none" stroke="#F8FAFC" stroke-width="2.4" stroke-linecap="square" d="M48 32h32M48 46h32M64 24v22"/>
   <rect x="66" y="48" width="12" height="12" rx="2.4" fill="#059669"/>
-  <text x="64" y="104" text-anchor="middle" fill="#0F172A" font-family="Microsoft JhengHei, PingFang TC, Noto Sans TC, sans-serif" font-size="28" font-weight="700">«</text>
-  <text x="64" y="128" text-anchor="middle" fill="#475569" font-family="Microsoft JhengHei, PingFang TC, Noto Sans TC, sans-serif" font-size="12">
-ûqÇ™«ã</text>
+  <text x="64" y="104" text-anchor="middle" fill="#0F172A" font-family="Microsoft JhengHei, PingFang TC, Noto Sans TC, sans-serif" font-size="28" font-weight="700">æåº«</text>
+  <text x="64" y="128" text-anchor="middle" fill="#475569" font-family="Microsoft JhengHei, PingFang TC, Noto Sans TC, sans-serif" font-size="12">èˆŠç³»çµ±è³‡æ–™åº«è§£æ</text>
 </svg>

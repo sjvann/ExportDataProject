@@ -1,10 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 248 48" role="img" aria-labelledby="title desc">
-  <title id="title">«</title>
-  <desc id="desc">k–Dúr•æ¹ºÉ(:ó¹º1ª(¼‡ö–!1=”</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 248 48" role="img">
+  <title>æåº«</title>
+  <desc>Horizontal lockup for light backgrounds. Icon plus name.</desc>
   <rect width="40" height="40" x="4" y="4" rx="9" fill="#1E3A5F"/>
   <path fill="none" stroke="#F8FAFC" stroke-width="1.6" stroke-linecap="square" d="M12 16h16M12 23h16M20 12v11"/>
   <rect x="21" y="24.2" width="6" height="6" rx="1.2" fill="#059669"/>
-  <text x="56" y="22" fill="#0F172A" font-family="Microsoft JhengHei, PingFang TC, Noto Sans TC, sans-serif" font-size="20" font-weight="700">«</text>
-  <text x="56" y="38" fill="#475569" font-family="Microsoft JhengHei, PingFang TC, Noto Sans TC, sans-serif" font-size="11">
-ûqÇ™«ã</text>
+  <text x="56" y="22" fill="#0F172A" font-family="Microsoft JhengHei, PingFang TC, Noto Sans TC, sans-serif" font-size="20" font-weight="700">æåº«</text>
+  <text x="56" y="38" fill="#475569" font-family="Microsoft JhengHei, PingFang TC, Noto Sans TC, sans-serif" font-size="11">èˆŠç³»çµ±è³‡æ–™åº«è§£æ</text>
 </svg>
