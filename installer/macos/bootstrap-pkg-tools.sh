@@ -79,10 +79,12 @@ write_cc_wrapper() {
   cat > "${PREFIX}/bin/${name}" <<EOF
 #!/bin/bash
 export LD_LIBRARY_PATH="${PREFIX}/usr/lib/x86_64-linux-gnu:\${LD_LIBRARY_PATH:-}"
-exec "${PREFIX}/usr/bin/${real}" -idirafter "${PREFIX}/usr/include" -idirafter "${PREFIX}/usr/include/x86_64-linux-gnu" "\$@"
+exec "${PREFIX}/usr/bin/${real}" --sysroot="${PREFIX}" "\$@"
 EOF
   chmod 0755 "${PREFIX}/bin/${name}"
 }
+ln -sfn usr/lib "${PREFIX}/lib"
+ln -sfn usr/lib64 "${PREFIX}/lib64"
 write_cc_wrapper gcc x86_64-linux-gnu-gcc-13
 write_cc_wrapper g++ x86_64-linux-gnu-g++-13
 write_cc_wrapper cc x86_64-linux-gnu-gcc-13
