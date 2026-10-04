@@ -1,0 +1,54 @@
+#!/bin/bash
+set -euo pipefail
+URL="http://127.0.0.1:5107"
+STATE="${XDG_STATE_HOME:-$HOME/.local/state}/exportdata"
+PIDFILE="$STATE/workbench.pid"
+mkdir -p "$STATE"
+
+port_open() {
+  (echo >/dev/tcp/127.0.0.1/5107) >/dev/null 2>&1
+}
+
+stop_workbench() {
+  if [[ -f "$PIDFILE" ]]; then
+    local pid
+    pid="$(cat "$PIDFILE")"
+    if [[ -n "${pid}" ]] && kill -0 "${pid}" 2>/dev/null; then
+      kill "${pid}" 2>/dev/null || true
+    fi
+    rm -f "$PIDFILE"
+  fi
+}
+
+if [[ "${1:-}" == "stop" ]]; then
+  stop_workbench
+  exit 0
+fi
+
+if port_open; then
+  echo "析庫已在執行：${URL}"
+  xdg-open "${URL}" >/dev/null 2>&1 || true
+  exit 0
+fi
+
+export ASPNETCORE_ENVIRONMENT=Production
+export ASPNETCORE_URLS="${URL}"
+export DOTNET_NOLOGO=1
+export DOTNET_CLI_TELEMETRY_OPTOUT=1
+
+cd /opt/exportdata/web
+./ExportDataWeb >>"${STATE}/workbench.log" 2>&1 &
+echo $! >"${PIDFILE}"
+disown || true
+
+for _ in $(seq 1 40); do
+  if port_open; then
+    echo "析庫工作台：${URL}"
+    xdg-open "${URL}" >/dev/null 2>&1 || true
+    exit 0
+  fi
+  sleep 1
+done
+
+echo "析庫沒有在 40 秒內啟動。請看 ${STATE}/workbench.log" >&2
+exit 1

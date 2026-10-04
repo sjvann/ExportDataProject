@@ -1,0 +1,36 @@
+#!/bin/bash
+set -euo pipefail
+HERE="$(cd "$(dirname "$0")" && pwd)"
+APP="$(cd "$HERE/.." && pwd)"
+WEB="$APP/Resources/web"
+URL="http://127.0.0.1:5107"
+LOG="$HOME/Library/Logs/exportdata.log"
+mkdir -p "$(dirname "$LOG")"
+
+port_open() {
+  (echo >/dev/tcp/127.0.0.1/5107) >/dev/null 2>&1
+}
+
+if port_open; then
+  open "$URL"
+  exit 0
+fi
+
+export ASPNETCORE_ENVIRONMENT=Production
+export ASPNETCORE_URLS="$URL"
+export DOTNET_NOLOGO=1
+export DOTNET_CLI_TELEMETRY_OPTOUT=1
+
+(
+  for _ in $(seq 1 40); do
+    if port_open; then
+      open "$URL"
+      exit 0
+    fi
+    sleep 1
+  done
+) &
+
+cd "$WEB"
+exec >>"$LOG" 2>&1
+exec "$WEB/ExportDataWeb"

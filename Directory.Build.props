@@ -1,0 +1,7 @@
+<Project>
+  <PropertyGroup>
+    <Version>0.1.0</Version>
+    <Product>析庫</Product>
+    <Description>本機舊系統資料庫工具</Description>
+  </PropertyGroup>
+</Project>

@@ -1,0 +1,10 @@
+#!/bin/bash
+set -e
+APP="/Applications/析庫.app"
+BIN="$APP/Contents/Resources/cli/ExportData"
+chmod 0755 "$APP/Contents/MacOS/exportdata" || true
+chmod 0755 "$APP/Contents/Resources/web/ExportDataWeb" || true
+chmod 0755 "$BIN" || true
+mkdir -p /usr/local/bin
+ln -sfn "$BIN" /usr/local/bin/exportdata
+exit 0

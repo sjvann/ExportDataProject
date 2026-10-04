@@ -1,0 +1,13 @@
+Package: exportdata
+Version: __VERSION__
+Section: utils
+Priority: optional
+Architecture: amd64
+Maintainer: sjvann <sjvann@users.noreply.github.com>
+Homepage: https://github.com/sjvann/ExportDataProject
+Depends: libc6 (>= 2.31), libgcc-s1 | libgcc1, libstdc++6, zlib1g, ca-certificates, libssl3 | libssl1.1, libicu76 | libicu74 | libicu72 | libicu70 | libicu69 | libicu66
+Recommends: libgssapi-krb5-2
+Description: 析庫，本機舊系統資料庫工具
+ 連上 SQLite、SQL Server、MySQL、Oracle 或 PostgreSQL，
+ 查看資料表結構與範例，並把資料表匯出成 CSV。
+ 工作台聽在 http://127.0.0.1:5107 ，只接受本機連線。

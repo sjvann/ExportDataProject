@@ -4,9 +4,13 @@ using ExportData.Models.Config;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 控制台以 --no-launch-profile 啟動時環境是 Production，預設不會載入建置期的靜態資產清單，
-// 請求 ExportDataWeb.styles.css 會在 wwwroot 找不到檔而丟例外。
-if (!builder.Environment.IsDevelopment())
+// 從原始碼以 Production 啟動（例如 --no-launch-profile）時，樣式表還在建置目錄，
+// 要靠靜態資產清單才能找到。發布後的安裝目錄已把樣式表放進 wwwroot；
+// 若再載入開發清單，路徑會指回打包那台電腦，別台機器會缺檔。
+var webRoot = builder.Environment.WebRootPath
+    ?? Path.Combine(builder.Environment.ContentRootPath, "wwwroot");
+var stylesInWebRoot = File.Exists(Path.Combine(webRoot, "ExportDataWeb.styles.css"));
+if (!builder.Environment.IsDevelopment() && !stylesInWebRoot)
 {
     builder.WebHost.UseStaticWebAssets();
 }

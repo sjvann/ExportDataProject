@@ -3,6 +3,10 @@
 ###############################################################################
 * text=auto
 
+installer/**/*.sh text eol=lf
+installer/**/*.command text eol=lf
+installer/**/*.desktop text eol=lf
+
 ###############################################################################
 # Set default behavior for command prompt diff.
 #

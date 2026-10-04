@@ -1,0 +1,11 @@
+#!/bin/bash
+set -e
+if [ "$1" = "remove" ] || [ "$1" = "upgrade" ]; then
+  for pid in $(pgrep -x ExportDataWeb || true); do
+    exe=$(readlink -f "/proc/$pid/exe" || true)
+    case "$exe" in
+      /opt/exportdata/web/ExportDataWeb*) kill "$pid" || true ;;
+    esac
+  done
+fi
+exit 0

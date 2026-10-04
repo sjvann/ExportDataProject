@@ -47,3 +47,6 @@
 {"utc":"2026-10-04T07:24:42.3986415+00:00","tool":"build","ok":true,"ms":2843,"args":{"mode":"one","path":"ExportDataWeb"}}
 {"utc":"2026-10-04T07:24:52.3258357+00:00","tool":"start_service","ok":true,"ms":7688,"args":{"id":"exportdataweb"}}
 {"utc":"2026-10-04T07:25:06.8857738+00:00","tool":"stack_status","ok":true,"ms":672,"args":{}}
+{"utc":"2026-10-04T07:40:46.9931993+00:00","tool":"duty_summary","ok":false,"ms":171,"args":{}}
+{"utc":"2026-10-04T07:40:52.5435981+00:00","tool":"git_status","ok":true,"ms":499,"args":{}}
+{"utc":"2026-10-04T07:46:23.6367038+00:00","tool":"list_services","ok":true,"ms":1,"args":{}}
