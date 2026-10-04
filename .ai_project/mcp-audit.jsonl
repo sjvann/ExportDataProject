@@ -28,3 +28,4 @@
 {"utc":"2026-10-04T03:19:45.8567606+00:00","tool":"stop_service","ok":true,"ms":185,"args":{"confirm":"true","id":"exportdataweb"}}
 {"utc":"2026-10-04T03:19:57.6702639+00:00","tool":"build","ok":true,"ms":8707,"args":{"mode":"one","path":"ExportDataWeb"}}
 {"utc":"2026-10-04T03:20:11.3473479+00:00","tool":"start_service","ok":true,"ms":10356,"args":{"id":"exportdataweb"}}
+{"utc":"2026-10-04T03:27:04.6274474+00:00","tool":"duty_summary","ok":false,"ms":252,"args":{}}

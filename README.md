@@ -1,190 +1,177 @@
-# 資料庫匯出工具 (Database Export Tool)
+# 析庫
 
-這是一個功能強大的資料庫匯出工具，支援多種資料庫類型，可以快速匯出資料庫中所有資料表的資料成 CSV 格式，並提供資料庫結構分析功能。
+析庫是跑在本機的舊系統資料庫工具。連上 SQLite、SQL Server、MySQL、Oracle 或 PostgreSQL 之後，可以查看資料表清單、欄位結構、少量範例與宣告關聯，並把資料表匯出成 CSV。畫面與命令列提示都是繁體中文。
 
-## 🚀 功能特色
+目前有兩種用法：
 
-- **多資料庫支援**: SQLite、SQL Server、MySQL、Oracle、PostgreSQL
-- **兩種使用模式**: CLI 互動式介面 和 Web 介面
-- **資料庫結構分析**: 取得資料表結構、關聯性、索引等資訊
-- **範例資料預覽**: 可以查看每個資料表的範例資料
-- **批量匯出**: 支援匯出所有資料表或指定資料表
-- **資料壓縮**: 可選擇將匯出的 CSV 檔案壓縮成 ZIP
-- **資料去識別化**: 支援敏感資料的去識別化處理 (開發中)
+- **網頁工作台**（`ExportDataWeb`）：用表單或連線字串連線、測試連線、列出資料庫、分析資料表，並匯出 CSV。
+- **命令列**（`ExportData`）：用互動問答或 `appsettings.json` 做批量 CSV 匯出，可選擇壓成 ZIP。
 
-## 📦 專案結構
+`ExportData.Core` 已開始保存解析專案（盤點快照、欄位確認狀態、宣告關聯）。欄位用途確認與分析包匯出還沒接到工作台。
 
-```
-ExportDataProject/
-├── ExportData/                 # 核心程式庫
-│   ├── Interfaces/            # 介面定義
-│   ├── Models/                # 資料模型
-│   ├── Services/              # 服務類別
-│   ├── SqlGen/                # SQL 產生器
-│   └── Program.cs             # CLI 程式進入點
-├── ExportDataWeb/             # Web 介面
-│   ├── Pages/                 # Razor Pages
-│   └── Program.cs             # Web 程式進入點
-└── README.md
-```
+## 環境
 
-## 🛠️ 安裝與設定
+- [.NET 10 SDK](https://dotnet.microsoft.com/download)
+- Windows
+- 要連線的資料庫，以及該資料庫的讀取帳號
 
-### 前置需求
-- .NET 9.0 或更高版本
-- 對應的資料庫驅動程式
+網頁內建 SQLite、SQL Server、MySQL、Oracle、PostgreSQL 的驅動。若執行時回報驅動尚未載入，依畫面連結安裝後重新啟動工具。
 
-### 建置專案
-```bash
-# 建置 CLI 工具
-cd ExportData
-dotnet build
+## 建置
 
-# 建置 Web 介面
-cd ../ExportDataWeb
-dotnet build
-```
-
-## 📖 使用方式
-
-### 1. CLI 互動式模式
+在儲存庫根目錄執行：
 
 ```bash
-cd ExportData
-dotnet run --interactive
+dotnet build ExportDataProjects.sln
+dotnet build ExportDataWeb/ExportDataWeb.csproj
 ```
 
-這會啟動一問一答的互動式介面，引導您設定：
-- 資料庫類型和連線字串
-- 匯出參數 (路徑、檔案數量等)
-- 是否壓縮檔案
+`ExportDataProjects.sln` 含命令列、核心程式庫與測試。網頁專案請用第二行單獨建置。
 
-### 2. CLI 設定檔模式
+測試：
 
 ```bash
-cd ExportData
-dotnet run --config appsettings.json
+dotnet test ExportDataProjects.sln
 ```
 
-使用預先設定好的 `appsettings.json` 檔案執行匯出。
-
-### 3. Web 介面模式
+## 網頁工作台
 
 ```bash
-cd ExportDataWeb
-dotnet run
+dotnet run --project ExportDataWeb --launch-profile https
 ```
 
-然後開啟瀏覽器訪問 `https://localhost:5001`
+瀏覽器開啟：
 
-Web 介面提供：
-- 視覺化的參數設定
-- 資料庫結構分析
-- 資料表詳細資訊查看
-- 範例資料預覽
+- https://localhost:7046
+- http://localhost:5107
 
-### 4. 測試模式
+只要 HTTP 時：
 
 ```bash
-cd ExportData
-dotnet run --test
+dotnet run --project ExportDataWeb --launch-profile http
 ```
 
-執行內建的測試來驗證功能是否正常。
+工作台可以：
 
-## ⚙️ 設定檔範例
+1. 選擇資料庫類型。SQL Server、MySQL、PostgreSQL 可載入伺服器上的資料庫清單。
+2. 用表單填寫連線，或改貼完整連線字串。預覽裡的密碼以星號顯示。
+3. **測試連線**，確認主機、連接埠與帳號。
+4. **分析結構**，在右側列出資料表或檢視表。
+5. **匯出 CSV**。可指定路徑、每表筆數（1–10000）、名稱前綴、資料表或檢視表，以及是否壓成 ZIP。
 
-### appsettings.json
+密碼在測試連線後不會留在輸入框。同一瀏覽器工作階段會記住，以便接著分析或匯出。從資料表清單按「開啟」時，網址只帶表名；詳細頁要再提供連線字串與資料庫類型，才能載入結構、範例（10 筆）或關聯。
+
+## 命令列
+
+在儲存庫根目錄執行。
+
+互動模式會詢問資料庫類型、連線字串、匯出筆數、前綴、指定資料表、路徑與是否壓縮：
+
+```bash
+dotnet run --project ExportData -- --interactive
+```
+
+設定檔模式讀取目前目錄的 `appsettings.json`，或用 `--config` 指定路徑：
+
+```bash
+dotnet run --project ExportData -- --config appsettings.json
+```
+
+內建 SQLite 煙霧測試會在暫存目錄建立測試庫並匯出：
+
+```bash
+dotnet run --project ExportData -- --test
+```
+
+設定檔模式會讀取 `ExControl:ExportPath` 與 `ExControl:MakeToZip`。ZIP 檔名在這個模式下使用 `ExportZip`，再加上日期。互動模式可以自訂 ZIP 檔名。
+
+## 設定檔
+
+命令列設定檔的鍵名如下。請換成自己的連線，不要把含密碼的檔案提交進儲存庫。
+
 ```json
 {
   "DbControl": {
-    "ConnectionString": "Data Source=server;Initial Catalog=database;User Id=user;Password=password;",
-    "DbType": "SqlServer",
+    "ConnectionString": "Data Source=c:\\temp\\database.db;",
+    "DbType": "Sqlite",
     "TableType": "Table",
     "TableList": [],
     "Size": 100,
-    "Prefix": ""
+    "Prefix": "",
+    "Owner": "",
+    "DbName": ""
   },
   "ExControl": {
     "ExportPath": "c:\\temp",
-    "MakeToZip": true,
-    "ZipFileName": "ExportData"
-  },
-  "DeIdentification": {
-    "DeIdentification": false,
-    "PII": ["PatientName", "PatientID"],
-    "PHI": false
+    "MakeToZip": true
   }
 }
 ```
 
-### 參數說明
+| 鍵 | 說明 |
+| --- | --- |
+| `DbControl:ConnectionString` | 連線字串 |
+| `DbControl:DbType` | `Sqlite`、`SqlServer`、`MySql`、`Oracle`、`PostgreSql` |
+| `DbControl:TableType` | `Table` 或 `View`（也可寫 `1`、`2`） |
+| `DbControl:TableList` | 要匯出的資料表。空陣列表示依類型與前綴列出全部 |
+| `DbControl:Size` | 每個物件匯出的列數上限 |
+| `DbControl:Prefix` | 只匯出名稱以此開頭的物件。留空表示不過濾 |
+| `DbControl:Owner` | Oracle 擁有者。空白時命令列沿用設定檔原值；網頁表單空白時改用使用者名稱 |
+| `ExControl:ExportPath` | CSV 與 ZIP 的目錄。不存在時網頁匯出會建立 |
+| `ExControl:MakeToZip` | `true` 時，匯出後把該目錄的 CSV 壓進 ZIP，並刪除已壓入的 CSV |
 
-#### DbControl (資料庫控制)
-- `ConnectionString`: 資料庫連線字串
-- `DbType`: 資料庫類型 (Sqlite, SqlServer, MySql, Oracle, PostgreSql)
-- `TableType`: 匯出物件類型 (Table, View)
-- `TableList`: 指定要匯出的資料表清單 (空陣列表示匯出所有)
-- `Size`: 每個資料表匯出的記錄數量
-- `Prefix`: 資料表名稱前綴過濾
+`DeIdentification` 會被命令列讀入。匯出時只寫一筆日誌，CSV 仍是原值。網頁匯出固定關閉這個開關。
 
-#### ExControl (匯出控制)
-- `ExportPath`: 匯出檔案的儲存路徑
-- `MakeToZip`: 是否壓縮成 ZIP 檔案
-- `ZipFileName`: ZIP 檔案名稱 (不含副檔名)
+## 連線字串
 
-## 🔗 連線字串範例
+命令列與網頁的「連線字串」模式直接使用下列格式。網頁的「表單填寫」會依欄位組成同等內容。
 
-### SQLite
-```
+SQLite：
+
+```text
 Data Source=c:\temp\database.db;
 ```
 
-### SQL Server
-```
-Data Source=server;Initial Catalog=database;User Id=user;Password=password;
+SQL Server（SQL 驗證）：
+
+```text
+Data Source=localhost,1433;Initial Catalog=database;User ID=user;Password=password;Trust Server Certificate=True
 ```
 
-### MySQL
-```
-Server=localhost;Database=database;Uid=user;Pwd=password;
+SQL Server（Windows 驗證）把伺服器寫在 `Data Source`。具名執行個體例如 `localhost\SQLEXPRESS`，連接埠留空。
+
+MySQL：
+
+```text
+Server=localhost;Port=3306;Database=database;User ID=user;Password=password
 ```
 
-### Oracle
-```
-Data Source=server:1521/service;User Id=user;Password=password;
+Oracle（服務名稱）：
+
+```text
+Data Source=localhost:1521/ORCL;User ID=user;Password=password
 ```
 
-### PostgreSQL
-```
+PostgreSQL：
+
+```text
 Host=localhost;Port=5432;Database=database;Username=user;Password=password
 ```
 
-## 🎯 使用場景
+## 專案
 
-1. **資料交換**: 快速了解新資料庫的結構和內容
-2. **資料備份**: 將重要資料表匯出成 CSV 格式
-3. **資料分析**: 取得範例資料進行初步分析
-4. **系統遷移**: 了解來源系統的資料結構
-5. **文件產生**: 自動產生資料庫結構文件
+```text
+ExportDataProject/
+├── ExportData/                 命令列、目錄 SQL、CSV 匯出
+├── ExportData.Tests/           連線組成、PostgreSQL 目錄 SQL、驅動探測
+├── ExportData.Core/            解析專案文件模型與儲存
+├── ExportData.Core.Tests/      解析專案盤點模型測試
+├── ExportDataWeb/              析庫工作台（Razor Pages）
+└── ExportDataProjects.sln      命令列、核心與測試
+```
 
-## 🔧 開發者資訊
+匯出檔名是 `{資料表名稱}_{yyyyMMdd}.csv`，編碼 UTF-8。ZIP 檔名是 `{名稱}_{yyyyMMdd}.zip`。
 
-### 架構設計
-- **依賴注入**: 使用 Microsoft.Extensions.DependencyInjection
-- **日誌記錄**: 使用 Microsoft.Extensions.Logging
-- **非同步程式設計**: 全面使用 async/await
-- **介面導向**: 透過介面實現鬆耦合設計
+## 後續
 
-### 擴展性
-- 可輕鬆新增其他資料庫類型的支援
-- 可自訂匯出格式 (目前支援 CSV)
-- 可擴展資料去識別化規則
-
-## 📝 授權
-
-此專案採用 MIT 授權條款。
-
-## 🤝 貢獻
-
-歡迎提交 Issue 和 Pull Request 來改善這個工具！
+工作台下一步是把解析專案接上畫面：唯讀盤點留在本機檔案、逐欄寫下用途並標成已確認或略過，再把看過的範圍匯出成分析包（封面、資料字典、實體關係圖、未確認清單）。命令列的 CSV 匯出維持獨立，不讀寫解析專案。
