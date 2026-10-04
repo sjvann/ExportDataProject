@@ -38,8 +38,8 @@ namespace ExportData
                 }
 
                 using var connection = _sqlProvider.GetConnection();
-                var result = await connection.QueryAsync<Dictionary<string, object>>(sql, commandTimeout: 300);
-                _logger.LogInformation("Retrieved {Count} records from table: {TableName}", result.Count(), tableName);
+                var result = await DataRowReader.ReadAsync(connection, sql, commandTimeout: 300);
+                _logger.LogInformation("Retrieved {Count} records from table: {TableName}", result.Count, tableName);
                 return result;
             }
             catch (Exception ex)
@@ -64,8 +64,8 @@ namespace ExportData
 
             _logger.LogInformation("Executing SQL: {Sql}", sql);
             using var connection = _sqlProvider.GetConnection();
-            var result = await connection.QueryAsync<Dictionary<string, object>>(sql, commandTimeout: 300);
-            _logger.LogInformation("Retrieved {Count} records from table: {TableName}", result.Count(), tableName);
+            var result = await DataRowReader.ReadAsync(connection, sql, commandTimeout: 300);
+            _logger.LogInformation("Retrieved {Count} records from table: {TableName}", result.Count, tableName);
             return result;
         }
 
