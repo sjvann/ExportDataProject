@@ -1,28 +1,59 @@
 ﻿@page
 @model IndexModel
 @{
-    ViewData["Title"] = "資料庫匯出工具";
+    ViewData["Title"] = "工作台";
 }
 
-<div class="container">
-    <div class="row">
-        <div class="col-md-12">
-            <h1 class="mb-4">📊 資料庫匯出工具</h1>
-            <p class="lead">快速匯出資料庫所有資料表的紀錄成CSV檔格式，並分析資料庫結構</p>
+<div class="workspace">
+    <h1 class="visually-hidden">析庫工作台</h1>
+
+    @if (!string.IsNullOrEmpty(Model.Message))
+    {
+        <div id="form-alert"
+             class="alert @(Model.IsSuccess ? "alert-success" : "alert-danger")"
+             role="@(Model.IsSuccess ? "status" : "alert")"
+             tabindex="-1"
+             aria-labelledby="form-alert-title">
+            <h2 class="alert-heading" id="form-alert-title">@(Model.IsSuccess ? "完成" : "無法繼續")</h2>
+            @if (!Model.IsSuccess && !string.IsNullOrEmpty(Model.ErrorField))
+            {
+                <a href="#@Model.ErrorField">@Model.Message</a>
+            }
+            else
+            {
+                <p class="mb-0">@Model.Message</p>
+            }
+            @if (!string.IsNullOrEmpty(Model.DriverDownloadUrl))
+            {
+                <div class="mt-2">
+                    <a class="btn btn-sm btn-ghost" href="@Model.DriverDownloadUrl" target="_blank" rel="noopener noreferrer">下載驅動程式</a>
+                </div>
+            }
         </div>
+    }
+
+    <div class="view-switch" id="view-switch" hidden>
+        <button type="button" data-view="setup" aria-pressed="true">設定</button>
+        <button type="button" data-view="inventory" aria-pressed="false" tabindex="-1">資料表</button>
     </div>
 
-    <form method="post">
-        <div class="row">
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header">
-                        <h5>🔗 資料庫連線設定</h5>
-                    </div>
-                    <div class="card-body">
+    <form method="post" id="export-form" class="workspace-grid">
+        <div class="pane pane-setup is-active" id="pane-setup">
+            <div class="tabs" data-tabs>
+                <div class="tablist" role="tablist" aria-label="設定">
+                    <button type="button" class="tab" role="tab" id="tab-connection" aria-controls="panel-connection" aria-selected="true">連線</button>
+                    <button type="button" class="tab" role="tab" id="tab-export" aria-controls="panel-export" aria-selected="false" tabindex="-1">匯出</button>
+                </div>
+
+                <div class="tab-panel" role="tabpanel" id="panel-connection" aria-labelledby="tab-connection">
+                    <div id="db-connection-card">
                         <div class="mb-3">
-                            <label for="DbType" class="form-label">資料庫類型</label>
-                            <select class="form-select" asp-for="DbConfig.DbType" required>
+                            <label class="form-label" for="DbConfig_DbType">資料庫類型</label>
+                            <select class="form-select @Model.InvalidClass("DbConfig_DbType")"
+                                    asp-for="DbConfig.DbType"
+                                    required
+                                    aria-invalid="@Model.InvalidAria("DbConfig_DbType")"
+                                    aria-describedby="@Model.InvalidDescribedBy("DbConfig_DbType")">
                                 <option value="">請選擇資料庫類型</option>
                                 <option value="Sqlite">SQLite</option>
                                 <option value="SqlServer">SQL Server</option>
@@ -30,170 +61,329 @@
                                 <option value="Oracle">Oracle</option>
                                 <option value="PostgreSql">PostgreSQL</option>
                             </select>
+                            @if (Model.IsFieldError("DbConfig_DbType"))
+                            {
+                                <div class="invalid-feedback d-block" id="DbConfig_DbType-error">@Model.Message</div>
+                            }
                         </div>
 
-                        <div class="mb-3">
-                            <label for="ConnectionString" class="form-label">連線字串</label>
-                            <textarea class="form-control" asp-for="DbConfig.ConnectionString" rows="3" required
-                                      placeholder="例如: Data Source=server;Initial Catalog=database;User Id=user;Password=password;"></textarea>
+                        <div id="driver-status"
+                             class="driver-status alert mb-3 @(Model.SelectedDriver?.Installed == false ? "alert-warning" : "alert-success")"
+                             role="status"
+                             @(Model.SelectedDriver == null ? "hidden" : null)>
+                            @if (Model.SelectedDriver is { } driver)
+                            {
+                                <div class="driver-meta">
+                                    <div class="fw-semibold">@(driver.Installed ? $"{driver.DisplayName} 驅動程式已內建" : $"尚未載入 {driver.DisplayName} 驅動程式")</div>
+                                    <div class="small">@(driver.Installed ? $"{driver.PackageId} {driver.Version}".Trim() : "下載安裝後請重新啟動此工具。")</div>
+                                </div>
+                                <a class="btn btn-sm btn-ghost"
+                                   href="@driver.DownloadUrl"
+                                   target="_blank"
+                                   rel="noopener noreferrer">@(driver.Installed ? "官方下載" : "下載驅動程式")</a>
+                            }
                         </div>
 
-                        <div class="mb-3">
-                            <label for="TableType" class="form-label">匯出物件類型</label>
-                            <select class="form-select" asp-for="DbConfig.TableType">
-                                <option value="Table">資料表 (Table)</option>
-                                <option value="View">檢視表 (View)</option>
-                            </select>
+                        <div id="connection-empty" class="mb-0" @(Model.HasDbType ? "hidden" : null)>
+                            <p class="text-secondary mb-0">請先選擇資料庫類型。選好之後，這裡會出現該資料庫的連線欄位。</p>
                         </div>
 
-                        <div class="mb-3">
-                            <label for="Size" class="form-label">每表匯出筆數</label>
-                            <input type="number" class="form-control" asp-for="DbConfig.Size" min="1" max="10000" value="100">
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="Prefix" class="form-label">資料表名稱前綴 (可選)</label>
-                            <input type="text" class="form-control" asp-for="DbConfig.Prefix"
-                                   placeholder="例如: USER_ (只匯出以此開頭的資料表)">
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header">
-                        <h5>📁 匯出設定</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="mb-3">
-                            <label for="ExportPath" class="form-label">匯出路徑</label>
-                            <input type="text" class="form-control" asp-for="ExConfig.ExportPath"
-                                   value="c:\temp" required>
-                        </div>
-
-                        <div class="mb-3">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" asp-for="ExConfig.MakeToZip" checked>
-                                <label class="form-check-label" for="MakeToZip">
-                                    壓縮成 ZIP 檔案
-                                </label>
+                        <div id="connection-mode" class="mb-3" @(Model.HasDbType ? null : "hidden")>
+                            <div class="form-label">連線方式</div>
+                            <div class="btn-group w-100" role="group" aria-label="連線方式">
+                                <input type="radio" class="btn-check" name="Connection.UseRawConnectionString" id="mode-form" value="false" autocomplete="off" @(!Model.Connection.UseRawConnectionString ? "checked" : null)>
+                                <label class="btn btn-ghost" for="mode-form">表單填寫</label>
+                                <input type="radio" class="btn-check" name="Connection.UseRawConnectionString" id="mode-raw" value="true" autocomplete="off" @(Model.Connection.UseRawConnectionString ? "checked" : null)>
+                                <label class="btn btn-ghost" for="mode-raw">連線字串</label>
                             </div>
                         </div>
 
-                        <div class="mb-3">
-                            <label for="ZipFileName" class="form-label">ZIP 檔案名稱</label>
-                            <input type="text" class="form-control" asp-for="ExConfig.ZipFileName"
-                                   value="ExportData" placeholder="不含副檔名">
-                        </div>
-                    </div>
-                </div>
+                        <details class="disclose" id="disclose-place" open>
+                            <summary>連線位置</summary>
+                            <div class="disclose-body">
+                                <div id="connection-server" class="field-block" @(Model.ShowServer ? null : "hidden")>
+                                    <div class="row g-2">
+                                        <div class="col-sm-8">
+                                            <label class="form-label" for="Connection_Host" id="label-host">@Model.HostLabel</label>
+                                            <input class="form-control @Model.InvalidClass("Connection_Host")"
+                                                   asp-for="Connection.Host"
+                                                   placeholder="@Model.HostPlaceholder"
+                                                   autocomplete="off"
+                                                   spellcheck="false"
+                                                   aria-invalid="@Model.InvalidAria("Connection_Host")"
+                                                   aria-describedby="@Model.InvalidDescribedBy("Connection_Host")" />
+                                            @if (Model.IsFieldError("Connection_Host"))
+                                            {
+                                                <div class="invalid-feedback d-block" id="Connection_Host-error">@Model.Message</div>
+                                            }
+                                        </div>
+                                        <div class="col-sm-4">
+                                            <label class="form-label" for="Connection_Port">連接埠</label>
+                                            <input class="form-control @Model.InvalidClass("Connection_Port")"
+                                                   asp-for="Connection.Port"
+                                                   inputmode="numeric"
+                                                   min="1"
+                                                   max="65535"
+                                                   placeholder="@Model.PortPlaceholder"
+                                                   aria-invalid="@Model.InvalidAria("Connection_Port")"
+                                                   aria-describedby="@Model.InvalidDescribedBy("Connection_Port")" />
+                                            @if (Model.IsFieldError("Connection_Port"))
+                                            {
+                                                <div class="invalid-feedback d-block" id="Connection_Port-error">@Model.Message</div>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
 
-                <div class="card mt-3">
-                    <div class="card-header">
-                        <h5>🔍 操作選項</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="d-grid gap-2">
-                            <button type="submit" name="action" value="test" class="btn btn-outline-primary">
-                                🔍 測試連線
-                            </button>
-                            <button type="submit" name="action" value="analyze" class="btn btn-info">
-                                📊 分析資料庫結構
-                            </button>
-                            <button type="submit" name="action" value="export" class="btn btn-success">
-                                📤 開始匯出
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </form>
-
-    @if (!string.IsNullOrEmpty(Model.Message))
-    {
-        <div class="row mt-4">
-            <div class="col-md-12">
-                <div class="alert @(Model.IsSuccess ? "alert-success" : "alert-danger")" role="alert">
-                    @Model.Message
-                </div>
-            </div>
-        </div>
-    }
-
-    @if (Model.DatabaseInfo != null)
-    {
-        <div class="row mt-4">
-            <div class="col-md-12">
-                <div class="card">
-                    <div class="card-header">
-                        <h5>📊 資料庫資訊</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-3">
-                                <strong>資料庫名稱:</strong><br>
-                                @Model.DatabaseInfo.DatabaseName
-                            </div>
-                            <div class="col-md-3">
-                                <strong>資料庫類型:</strong><br>
-                                @Model.DatabaseInfo.DatabaseType
-                            </div>
-                            <div class="col-md-3">
-                                <strong>版本:</strong><br>
-                                @Model.DatabaseInfo.Version
-                            </div>
-                            <div class="col-md-3">
-                                <strong>資料表數量:</strong><br>
-                                @Model.DatabaseInfo.TableCount
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    }
-
-    @if (Model.Tables != null && Model.Tables.Any())
-    {
-        <div class="row mt-4">
-            <div class="col-md-12">
-                <div class="card">
-                    <div class="card-header">
-                        <h5>📋 資料表清單</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-striped">
-                                <thead>
-                                    <tr>
-                                        <th>資料表名稱</th>
-                                        <th>記錄數</th>
-                                        <th>操作</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var table in Model.Tables)
+                                <div id="connection-sqlite" class="field-block" @(Model.ShowSqlite ? null : "hidden")>
+                                    <label class="form-label" for="Connection_FilePath">資料庫檔案路徑</label>
+                                    <input class="form-control @Model.InvalidClass("Connection_FilePath")"
+                                           asp-for="Connection.FilePath"
+                                           placeholder="c:\temp\database.db"
+                                           autocomplete="off"
+                                           spellcheck="false"
+                                           aria-invalid="@Model.InvalidAria("Connection_FilePath")"
+                                           aria-describedby="@Model.InvalidDescribedBy("Connection_FilePath")" />
+                                    <div class="form-text">請填這台電腦上的資料庫檔案完整路徑。</div>
+                                    @if (Model.IsFieldError("Connection_FilePath"))
                                     {
-                                        <tr>
-                                            <td>@table</td>
-                                            <td>
-                                                <span class="badge bg-secondary">載入中...</span>
-                                            </td>
-                                            <td>
-                                                <a href="/TableDetail?tableName=@table" class="btn btn-sm btn-outline-info">
-                                                    查看詳細
-                                                </a>
-                                            </td>
-                                        </tr>
+                                        <div class="invalid-feedback d-block" id="Connection_FilePath-error">@Model.Message</div>
                                     }
-                                </tbody>
-                            </table>
+                                </div>
+
+                                <div id="connection-oracle" class="field-block" @(Model.ShowOracle ? null : "hidden")>
+                                    <div class="mb-3">
+                                        <label class="form-label" for="Connection_Service">服務名稱</label>
+                                        <input class="form-control @Model.InvalidClass("Connection_Database")"
+                                               id="Connection_Service"
+                                               name="Connection.Database"
+                                               value="@Model.Connection.Database"
+                                               placeholder="ORCL"
+                                               autocomplete="off"
+                                               spellcheck="false"
+                                               aria-invalid="@Model.InvalidAria("Connection_Database")"
+                                               @(Model.ShowOracle ? null : "disabled") />
+                                        @if (Model.IsFieldError("Connection_Database") && Model.ShowOracle)
+                                        {
+                                            <div class="invalid-feedback d-block" id="Connection_Database-error">@Model.Message</div>
+                                        }
+                                    </div>
+                                    <label class="form-label" for="Connection_Owner">擁有者（可選）</label>
+                                    <input class="form-control" asp-for="Connection.Owner" placeholder="空白則使用使用者名稱" autocomplete="off" spellcheck="false" />
+                                    <div class="form-text">用來篩選 Oracle 物件。服務名稱例如 ORCL 或 XEPDB1。</div>
+                                </div>
+                            </div>
+                        </details>
+
+                        <details class="disclose" id="disclose-account" open>
+                            <summary>帳號與資料庫</summary>
+                            <div class="disclose-body">
+                                <div id="connection-sqlserver" class="field-block" @(Model.ShowSqlServer ? null : "hidden")>
+                                    <div class="form-check">
+                                        <input class="form-check-input" asp-for="Connection.IntegratedSecurity" />
+                                        <label class="form-check-label" for="Connection_IntegratedSecurity">使用 Windows 驗證</label>
+                                    </div>
+                                    <div class="form-text mb-2">勾選後改以目前的 Windows 帳號連線。具名執行個體請寫在伺服器，例如 localhost\SQLEXPRESS，並把連接埠留空。</div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" asp-for="Connection.TrustServerCertificate" />
+                                        <label class="form-check-label" for="Connection_TrustServerCertificate">信任伺服器憑證</label>
+                                    </div>
+                                    <div class="form-text">本機或使用自簽憑證時請勾選。</div>
+                                </div>
+
+                                <div id="connection-account" class="field-block" @(Model.ShowAccount ? null : "hidden")>
+                                    <div class="mb-3">
+                                        <label class="form-label" for="Connection_Username">使用者名稱</label>
+                                        <input class="form-control @Model.InvalidClass("Connection_Username")"
+                                               asp-for="Connection.Username"
+                                               placeholder="@Model.UsernamePlaceholder"
+                                               autocomplete="username"
+                                               spellcheck="false"
+                                               aria-invalid="@Model.InvalidAria("Connection_Username")"
+                                               aria-describedby="@Model.InvalidDescribedBy("Connection_Username")" />
+                                        @if (Model.IsFieldError("Connection_Username"))
+                                        {
+                                            <div class="invalid-feedback d-block" id="Connection_Username-error">@Model.Message</div>
+                                        }
+                                    </div>
+                                    <div class="mb-0">
+                                        <label class="form-label" for="Connection_Password">密碼</label>
+                                        <div class="input-group">
+                                            <input type="password" class="form-control" asp-for="Connection.Password" autocomplete="current-password" placeholder="@(Model.PasswordRemembered ? "已記住，留白即沿用" : null)" />
+                                            <button type="button" class="btn btn-ghost" id="toggle-password" aria-pressed="false" aria-controls="Connection_Password">顯示</button>
+                                        </div>
+                                        <input type="hidden" id="PasswordState" name="PasswordState" value="@(Model.PasswordRemembered ? "kept" : null)" />
+                                        <div class="form-text" id="password-memory-note">@(Model.PasswordRemembered ? "已記住密碼。留白會沿用，重新輸入則更換。" : "測試連線後畫面會重新整理，密碼不會留在欄位裡。同一工作階段會記住，可直接分析或匯出。")</div>
+                                    </div>
+                                </div>
+
+                                <div id="connection-database" class="field-block" @(Model.ShowDatabaseList ? null : "hidden")>
+                                    <label class="form-label" for="Connection_Database" id="label-database">資料庫</label>
+                                    <div class="input-group">
+                                        <select class="form-select @Model.InvalidClass("Connection_Database")"
+                                                id="Connection_Database"
+                                                name="Connection.Database"
+                                                aria-invalid="@Model.InvalidAria("Connection_Database")"
+                                                aria-describedby="@(Model.IsFieldError("Connection_Database") ? "Connection_Database-error database-list-status" : "database-list-status")"
+                                                @(Model.ShowDatabaseList ? null : "disabled")>
+                                            <option value="">請選擇資料庫</option>
+                                            @if (Model.ShowDatabaseList && !string.IsNullOrEmpty(Model.Connection.Database))
+                                            {
+                                                <option value="@Model.Connection.Database" selected>@Model.Connection.Database</option>
+                                            }
+                                        </select>
+                                        <button type="button" class="btn btn-ghost" id="reload-databases">載入</button>
+                                    </div>
+                                    @if (Model.IsFieldError("Connection_Database") && Model.ShowDatabaseList)
+                                    {
+                                        <div class="invalid-feedback d-block" id="Connection_Database-error">@Model.Message</div>
+                                    }
+                                    <div id="database-list-status" class="form-text" aria-live="polite">填好使用者名稱後，這裡會列出伺服器上的資料庫。</div>
+                                </div>
+                            </div>
+                        </details>
+
+                        <details class="disclose" id="disclose-advanced">
+                            <summary>進階與連線字串</summary>
+                            <div class="disclose-body">
+                                <div id="connection-raw" class="field-block" @(Model.RawMode ? null : "hidden")>
+                                    <label class="form-label" for="DbConfig_ConnectionString">連線字串</label>
+                                    <textarea class="form-control @Model.InvalidClass("DbConfig_ConnectionString")"
+                                              asp-for="DbConfig.ConnectionString"
+                                              rows="4"
+                                              spellcheck="false"
+                                              aria-invalid="@Model.InvalidAria("DbConfig_ConnectionString")"
+                                              aria-describedby="@Model.InvalidDescribedBy("DbConfig_ConnectionString")"
+                                              placeholder="需要特殊參數時再貼上完整連線字串"></textarea>
+                                    <div class="form-text">進階模式會直接使用這段字串。</div>
+                                    @if (Model.IsFieldError("DbConfig_ConnectionString"))
+                                    {
+                                        <div class="invalid-feedback d-block" id="DbConfig_ConnectionString-error">@Model.Message</div>
+                                    }
+                                </div>
+
+                                <div id="connection-preview-wrap" class="field-block" @(Model.ShowPreview ? null : "hidden")>
+                                    <div class="form-label">將使用的連線字串</div>
+                                    <pre id="connection-preview" class="@(string.IsNullOrEmpty(Model.MaskedConnectionString) ? "form-text text-secondary mb-0" : "connection-preview")" aria-live="polite">@Model.MaskedConnectionString</pre>
+                                    <div class="form-text">密碼以星號顯示。實際連線使用你輸入的密碼。</div>
+                                </div>
+                            </div>
+                        </details>
+                    </div>
+                </div>
+
+                <div class="tab-panel" role="tabpanel" id="panel-export" aria-labelledby="tab-export" hidden>
+                    <div class="mb-3">
+                        <label class="form-label" for="ExConfig_ExportPath">匯出路徑</label>
+                        <input type="text" class="form-control" asp-for="ExConfig.ExportPath" required>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" asp-for="ExConfig.MakeToZip">
+                            <label class="form-check-label" for="ExConfig_MakeToZip">壓縮成 ZIP 檔案</label>
                         </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="ExConfig_ZipFileName">ZIP 檔案名稱</label>
+                        <input type="text" class="form-control" asp-for="ExConfig.ZipFileName" placeholder="不含副檔名">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="DbConfig_TableType">匯出物件類型</label>
+                        <select class="form-select" asp-for="DbConfig.TableType">
+                            <option value="Table">資料表 (Table)</option>
+                            <option value="View">檢視表 (View)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="DbConfig_Size">每表匯出筆數</label>
+                        <input type="number" class="form-control" asp-for="DbConfig.Size" min="1" max="10000">
+                    </div>
+                    <div class="mb-0">
+                        <label class="form-label" for="DbConfig_Prefix">資料表名稱前綴（可選）</label>
+                        <input type="text" class="form-control" asp-for="DbConfig.Prefix" placeholder="例如 USER_">
                     </div>
                 </div>
             </div>
+
+            <div class="command-bar">
+                <div id="connection-test" @(Model.HasDbType ? null : "hidden")>
+                    <button type="submit" name="action" value="test" class="btn btn-ghost" id="test-connection">測試連線</button>
+                </div>
+                <button type="submit" name="action" value="analyze" class="btn btn-primary">分析結構</button>
+                <button type="submit" name="action" value="export" class="btn btn-accent">匯出 CSV</button>
+            </div>
         </div>
-    }
+
+        <section class="pane pane-inventory is-active" id="pane-inventory" aria-label="資料表清單">
+            @if (Model.DatabaseInfo != null)
+            {
+                <div class="pane-head">
+                    <h2>這座資料庫</h2>
+                    <span class="count-badge">@Model.DatabaseInfo.TableCount 張表</span>
+                </div>
+                <dl class="stat-row">
+                    <div>
+                        <dt>名稱</dt>
+                        <dd>@Model.DatabaseInfo.DatabaseName</dd>
+                    </div>
+                    <div>
+                        <dt>類型</dt>
+                        <dd>@Model.DatabaseInfo.DatabaseType</dd>
+                    </div>
+                    <div>
+                        <dt>版本</dt>
+                        <dd>@Model.DatabaseInfo.Version</dd>
+                    </div>
+                    <div>
+                        <dt>資料表</dt>
+                        <dd>@Model.DatabaseInfo.TableCount</dd>
+                    </div>
+                </dl>
+            }
+            else
+            {
+                <div class="pane-head">
+                    <h2>資料表清單</h2>
+                </div>
+            }
+
+            @if (Model.Tables != null && Model.Tables.Any())
+            {
+                <div class="pane-scroll">
+                    <table class="inventory-table">
+                        <thead>
+                            <tr>
+                                <th scope="col">資料表名稱</th>
+                                <th scope="col">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var table in Model.Tables)
+                            {
+                                <tr>
+                                    <td class="mono">@table</td>
+                                    <td>
+                                        <a href="/TableDetail?tableName=@table" class="btn btn-sm btn-ghost">開啟</a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="empty-panel">
+                    <img src="~/brand/mark.svg" width="48" height="48" alt="" />
+                    <h2>還沒有資料表清單</h2>
+                    <p>選好資料庫後按「分析結構」。清單會留在這一側，連線設定不用捲出畫面。</p>
+                </div>
+            }
+        </section>
+    </form>
 </div>
+
+@section Scripts {
+    <script type="application/json" id="driver-catalog">@Html.Raw(Model.DriverCatalogJson)</script>
+    <script src="~/js/connection-form.js" asp-append-version="true"></script>
+}

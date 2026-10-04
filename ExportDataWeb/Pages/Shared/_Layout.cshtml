@@ -1,52 +1,42 @@
 ﻿<!DOCTYPE html>
-<html lang="en">
+<html lang="zh-Hant" class="no-js">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - ExportDataWeb</title>
-    <script type="importmap"></script>
+    <meta name="theme-color" content="#1E3A5F" />
+    <title>@ViewData["Title"] - 析庫</title>
+    <script>document.documentElement.classList.remove("no-js");</script>
+    <link rel="icon" href="~/brand/app-icon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&family=Outfit:wght@500;600;700&family=Work+Sans:wght@400;500;600&display=swap" />
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/ExportDataWeb.styles.css" asp-append-version="true" />
 </head>
 <body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container">
-                <a class="navbar-brand" asp-area="" asp-page="/Index">ExportDataWeb</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-page="/Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-page="/Privacy">Privacy</a>
-                        </li>
-                    </ul>
-                </div>
-            </div>
+    <a class="skip-link" href="#main">跳至主要內容</a>
+    <header class="app-header">
+        <a class="brand" asp-area="" asp-page="/Index">
+            <img class="brand-mark" src="~/brand/app-icon.svg" width="28" height="28" alt="" />
+            <span class="brand-text">
+                <span class="brand-name">析庫</span>
+                <span class="brand-tag">舊系統資料庫解析</span>
+            </span>
+        </a>
+        <nav class="app-nav" aria-label="主要">
+            <a class="app-nav-link" asp-area="" asp-page="/Index">工作台</a>
+            <a class="app-nav-link" asp-area="" asp-page="/Privacy">隱私</a>
         </nav>
     </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
-    </div>
-
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2025 - ExportDataWeb - <a asp-area="" asp-page="/Privacy">Privacy</a>
-        </div>
-    </footer>
+    <main id="main" class="app-main">
+        @RenderBody()
+    </main>
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
-
     @await RenderSectionAsync("Scripts", required: false)
+    <script src="~/js/workspace.js" asp-append-version="true"></script>
 </body>
 </html>

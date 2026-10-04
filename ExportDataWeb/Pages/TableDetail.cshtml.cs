@@ -29,6 +29,7 @@ namespace ExportDataWeb.Pages
 
         public string? Message { get; set; }
         public bool IsSuccess { get; set; }
+        public string ActivePanel { get; private set; } = "schema";
         public TableSchema? TableSchema { get; set; }
         public IEnumerable<Dictionary<string, object>>? SampleData { get; set; }
         public IEnumerable<TableRelation>? Relations { get; set; }
@@ -49,6 +50,11 @@ namespace ExportDataWeb.Pages
                 Message = "請提供完整的資料表名稱和連線資訊";
                 IsSuccess = false;
                 return Page();
+            }
+
+            if (action is "schema" or "sample" or "relations")
+            {
+                ActivePanel = action;
             }
 
             try
@@ -97,18 +103,18 @@ namespace ExportDataWeb.Pages
                 
                 if (TableSchema != null)
                 {
-                    Message = $"✅ 成功載入資料表 {TableName} 的結構資訊";
+                    Message = $"已載入資料表 {TableName} 的結構";
                     IsSuccess = true;
                 }
                 else
                 {
-                    Message = $"❌ 無法取得資料表 {TableName} 的結構資訊";
+                    Message = $"無法取得資料表 {TableName} 的結構";
                     IsSuccess = false;
                 }
             }
             catch (Exception ex)
             {
-                Message = $"❌ 載入結構資訊失敗: {ex.Message}";
+                Message = $"載入結構失敗: {ex.Message}";
                 IsSuccess = false;
             }
         }
@@ -121,18 +127,18 @@ namespace ExportDataWeb.Pages
                 
                 if (SampleData != null && SampleData.Any())
                 {
-                    Message = $"✅ 成功載入資料表 {TableName} 的範例資料 ({SampleData.Count()} 筆)";
+                    Message = $"已載入資料表 {TableName} 的範例資料，共 {SampleData.Count()} 筆";
                     IsSuccess = true;
                 }
                 else
                 {
-                    Message = $"⚠️ 資料表 {TableName} 沒有資料或無法存取";
+                    Message = $"資料表 {TableName} 沒有資料或無法存取";
                     IsSuccess = false;
                 }
             }
             catch (Exception ex)
             {
-                Message = $"❌ 載入範例資料失敗: {ex.Message}";
+                Message = $"載入範例資料失敗: {ex.Message}";
                 IsSuccess = false;
             }
         }
@@ -152,24 +158,24 @@ namespace ExportDataWeb.Pages
                     
                     if (Relations.Any())
                     {
-                        Message = $"✅ 找到 {Relations.Count()} 個與資料表 {TableName} 相關的關聯性";
+                        Message = $"找到 {Relations.Count()} 個與資料表 {TableName} 相關的關聯";
                         IsSuccess = true;
                     }
                     else
                     {
-                        Message = $"⚠️ 資料表 {TableName} 沒有找到相關的關聯性";
+                        Message = $"資料表 {TableName} 沒有找到相關的關聯";
                         IsSuccess = false;
                     }
                 }
                 else
                 {
-                    Message = "❌ 無法取得資料表關聯性資訊";
+                    Message = "無法取得資料表關聯";
                     IsSuccess = false;
                 }
             }
             catch (Exception ex)
             {
-                Message = $"❌ 載入關聯性資訊失敗: {ex.Message}";
+                Message = $"載入關聯失敗: {ex.Message}";
                 IsSuccess = false;
             }
         }

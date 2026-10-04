@@ -1,247 +1,243 @@
 @page
 @model TableDetailModel
 @{
-    ViewData["Title"] = $"資料表詳細 - {Model.TableName}";
+    ViewData["Title"] = Model.TableName;
+    var panel = Model.ActivePanel is "sample" or "relations" ? Model.ActivePanel : "schema";
+    var columns = Model.TableSchema?.Columns;
+    var sampleRows = Model.SampleData?.ToList();
+    var relations = Model.Relations?.ToList();
 }
 
-<div class="container">
-    <div class="row">
-        <div class="col-md-12">
-            <nav aria-label="breadcrumb">
-                <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="/">首頁</a></li>
-                    <li class="breadcrumb-item active">@Model.TableName</li>
-                </ol>
-            </nav>
-            
-            <h1 class="mb-4">📋 資料表詳細資訊</h1>
-            <h2 class="text-primary">@Model.TableName</h2>
+<div class="workspace workspace-detail">
+    <header class="detail-bar">
+        <a class="back-link" href="/">
+            <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+                <path d="M10 3 5 8l5 5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            工作台
+        </a>
+        <div class="detail-title">
+            <h1 class="mono">@(string.IsNullOrEmpty(Model.TableName) ? "資料表" : Model.TableName)</h1>
+            @if (Model.TableSchema != null)
+            {
+                <p>@Model.TableSchema.Columns.Count 個欄位 · @Model.TableSchema.RowCount.ToString("N0") 筆</p>
+            }
         </div>
-    </div>
-
-    <form method="post">
-        <input type="hidden" asp-for="TableName" />
-        <input type="hidden" asp-for="ConnectionString" />
-        <input type="hidden" asp-for="DbType" />
-        
-        <div class="row mb-3">
-            <div class="col-md-12">
-                <div class="btn-group" role="group">
-                    <button type="submit" name="action" value="schema" class="btn btn-outline-info">
-                        🔍 載入結構資訊
-                    </button>
-                    <button type="submit" name="action" value="sample" class="btn btn-outline-success">
-                        📊 載入範例資料
-                    </button>
-                    <button type="submit" name="action" value="relations" class="btn btn-outline-warning">
-                        🔗 查看關聯性
-                    </button>
-                </div>
-            </div>
-        </div>
-    </form>
+    </header>
 
     @if (!string.IsNullOrEmpty(Model.Message))
     {
-        <div class="row">
-            <div class="col-md-12">
-                <div class="alert @(Model.IsSuccess ? "alert-success" : "alert-danger")" role="alert">
-                    @Model.Message
-                </div>
-            </div>
+        <div class="banner alert @(Model.IsSuccess ? "alert-success" : "alert-danger")" role="@(Model.IsSuccess ? "status" : "alert")">
+            <p class="mb-0">@Model.Message</p>
         </div>
     }
 
-    @if (Model.TableSchema != null)
-    {
-        <div class="row">
-            <div class="col-md-12">
-                <div class="card">
-                    <div class="card-header">
-                        <h5>📊 資料表結構</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row mb-3">
-                            <div class="col-md-4">
-                                <strong>資料表名稱:</strong> @Model.TableSchema.TableName
-                            </div>
-                            <div class="col-md-4">
-                                <strong>記錄數量:</strong> @Model.TableSchema.RowCount.ToString("N0")
-                            </div>
-                            <div class="col-md-4">
-                                <strong>欄位數量:</strong> @Model.TableSchema.Columns.Count
-                            </div>
-                        </div>
+    <form method="post" class="detail-form">
+        <input type="hidden" asp-for="TableName" />
+        <input type="hidden" asp-for="ConnectionString" />
+        <input type="hidden" asp-for="DbType" />
 
-                        <div class="table-responsive">
-                            <table class="table table-striped table-hover">
-                                <thead class="table-dark">
-                                    <tr>
-                                        <th>欄位名稱</th>
-                                        <th>資料類型</th>
-                                        <th>允許NULL</th>
-                                        <th>主鍵</th>
-                                        <th>外鍵</th>
-                                        <th>預設值</th>
-                                        <th>長度/精度</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var column in Model.TableSchema.Columns)
+        <div class="tabs" data-tabs>
+            <div class="tablist" role="tablist" aria-label="資料表內容">
+                <button type="button" class="tab" role="tab" id="tab-schema" aria-controls="panel-schema" aria-selected="@(panel == "schema" ? "true" : "false")" tabindex="@(panel == "schema" ? "0" : "-1")">結構</button>
+                <button type="button" class="tab" role="tab" id="tab-sample" aria-controls="panel-sample" aria-selected="@(panel == "sample" ? "true" : "false")" tabindex="@(panel == "sample" ? "0" : "-1")">範例</button>
+                <button type="button" class="tab" role="tab" id="tab-relations" aria-controls="panel-relations" aria-selected="@(panel == "relations" ? "true" : "false")" tabindex="@(panel == "relations" ? "0" : "-1")">關聯</button>
+            </div>
+
+            <div class="tab-panel" role="tabpanel" id="panel-schema" aria-labelledby="tab-schema" @(panel == "schema" ? null : "hidden")>
+                @if (columns != null && columns.Count > 0)
+                {
+                    <div class="panel-toolbar">
+                        <p>點欄位名稱看型別、鍵別與預設值。</p>
+                        <button type="submit" name="action" value="schema" class="btn btn-sm btn-ghost">重新載入</button>
+                    </div>
+                    <div class="schema-split" data-picker>
+                        <div class="schema-list" role="group" aria-label="欄位">
+                            @for (var i = 0; i < columns.Count; i++)
+                            {
+                                var column = columns[i];
+                                <button type="button" class="pick" data-pick id="col-tab-@i" aria-controls="col-@i" aria-pressed="@(i == 0 ? "true" : "false")">
+                                    <span class="pick-line">
+                                        <span class="mono">@column.ColumnName</span>
+                                        @if (column.IsPrimaryKey)
+                                        {
+                                            <span class="key-badge key-pk">主鍵</span>
+                                        }
+                                        @if (column.IsForeignKey)
+                                        {
+                                            <span class="key-badge key-fk">外鍵</span>
+                                        }
+                                    </span>
+                                    <span class="text-secondary small">@column.DataType</span>
+                                </button>
+                            }
+                        </div>
+                        <div class="schema-detail">
+                            @for (var i = 0; i < columns.Count; i++)
+                            {
+                                var column = columns[i];
+                                <article id="col-@i" @(i == 0 ? null : "hidden")>
+                                    <h2 class="h6 mono">@column.ColumnName</h2>
+                                    <dl class="def-list">
+                                        <dt>型別</dt>
+                                        <dd>@column.DataType</dd>
+                                        <dt>空值</dt>
+                                        <dd>@(column.IsNullable ? "可空" : "必填")</dd>
+                                        <dt>主鍵</dt>
+                                        <dd>@(column.IsPrimaryKey ? "是" : "否")</dd>
+                                        <dt>外鍵</dt>
+                                        <dd>
+                                            @if (column.IsForeignKey && !string.IsNullOrEmpty(column.ReferencedTable))
+                                            {
+                                                <span class="mono">@column.ReferencedTable.@column.ReferencedColumn</span>
+                                            }
+                                            else if (column.IsForeignKey)
+                                            {
+                                                <span>是</span>
+                                            }
+                                            else
+                                            {
+                                                <span>否</span>
+                                            }
+                                        </dd>
+                                        <dt>預設值</dt>
+                                        <dd>@(string.IsNullOrEmpty(column.DefaultValue) ? "無" : column.DefaultValue)</dd>
+                                        <dt>長度</dt>
+                                        <dd>
+                                            @if (column.MaxLength.HasValue)
+                                            {
+                                                @column.MaxLength.Value.ToString()
+                                            }
+                                            else if (column.Precision.HasValue)
+                                            {
+                                                @($"{column.Precision},{column.Scale}")
+                                            }
+                                            else
+                                            {
+                                                <span>無</span>
+                                            }
+                                        </dd>
+                                    </dl>
+                                </article>
+                            }
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="empty-panel">
+                        <h2>結構</h2>
+                        <p>欄位名稱、型別與鍵別會列在左側，點一下就在右側看完整定義。</p>
+                        <button type="submit" name="action" value="schema" class="btn btn-primary">載入結構</button>
+                    </div>
+                }
+            </div>
+
+            <div class="tab-panel" role="tabpanel" id="panel-sample" aria-labelledby="tab-sample" @(panel == "sample" ? null : "hidden")>
+                @if (sampleRows != null && sampleRows.Count > 0)
+                {
+                    <div class="panel-toolbar">
+                        <p>前 @sampleRows.Count 筆。寬表在這個窗格裡左右捲動。</p>
+                        <button type="submit" name="action" value="sample" class="btn btn-sm btn-ghost">重新載入</button>
+                    </div>
+                    <div class="pane-scroll">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    @foreach (var key in sampleRows[0].Keys)
                                     {
-                                        <tr>
-                                            <td>
-                                                <strong>@column.ColumnName</strong>
-                                                @if (column.IsPrimaryKey)
+                                        <th scope="col" class="mono">@key</th>
+                                    }
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var row in sampleRows)
+                                {
+                                    <tr>
+                                        @foreach (var value in row.Values)
+                                        {
+                                            <td class="mono">
+                                                @if (value == null)
                                                 {
-                                                    <span class="badge bg-warning text-dark ms-1">PK</span>
-                                                }
-                                                @if (column.IsForeignKey)
-                                                {
-                                                    <span class="badge bg-info ms-1">FK</span>
-                                                }
-                                            </td>
-                                            <td>@column.DataType</td>
-                                            <td>
-                                                @if (column.IsNullable)
-                                                {
-                                                    <span class="text-success">✓</span>
+                                                    <span class="text-secondary">空值</span>
                                                 }
                                                 else
                                                 {
-                                                    <span class="text-danger">✗</span>
+                                                    @value.ToString()
                                                 }
                                             </td>
-                                            <td>
-                                                @if (column.IsPrimaryKey)
-                                                {
-                                                    <span class="text-warning">✓</span>
-                                                }
-                                            </td>
-                                            <td>
-                                                @if (column.IsForeignKey)
-                                                {
-                                                    <span class="text-info">✓</span>
-                                                    @if (!string.IsNullOrEmpty(column.ReferencedTable))
-                                                    {
-                                                        <br><small class="text-muted">→ @column.ReferencedTable.@column.ReferencedColumn</small>
-                                                    }
-                                                }
-                                            </td>
-                                            <td>
-                                                @if (!string.IsNullOrEmpty(column.DefaultValue))
-                                                {
-                                                    <code>@column.DefaultValue</code>
-                                                }
-                                            </td>
-                                            <td>
-                                                @if (column.MaxLength.HasValue)
-                                                {
-                                                    @column.MaxLength.Value.ToString()
-                                                }
-                                                else if (column.Precision.HasValue)
-                                                {
-                                                    @($"{column.Precision},{column.Scale}")
-                                                }
-                                            </td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    }
-
-    @if (Model.SampleData != null && Model.SampleData.Any())
-    {
-        <div class="row mt-4">
-            <div class="col-md-12">
-                <div class="card">
-                    <div class="card-header">
-                        <h5>📊 範例資料 (前 @Model.SampleData.Count() 筆)</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-striped table-hover table-sm">
-                                <thead class="table-dark">
-                                    <tr>
-                                        @if (Model.SampleData.First() != null)
-                                        {
-                                            @foreach (var key in Model.SampleData.First().Keys)
-                                            {
-                                                <th>@key</th>
-                                            }
                                         }
                                     </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var row in Model.SampleData)
-                                    {
-                                        <tr>
-                                            @foreach (var value in row.Values)
-                                            {
-                                                <td>
-                                                    @if (value == null)
-                                                    {
-                                                        <span class="text-muted fst-italic">NULL</span>
-                                                    }
-                                                    else
-                                                    {
-                                                        @value.ToString()
-                                                    }
-                                                </td>
-                                            }
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
-                        </div>
+                                }
+                            </tbody>
+                        </table>
                     </div>
-                </div>
+                }
+                else
+                {
+                    <div class="empty-panel">
+                        <h2>範例資料</h2>
+                        <p>只取少數列，用來對照欄位的值長什麼樣子。</p>
+                        <button type="submit" name="action" value="sample" class="btn btn-primary">載入範例</button>
+                    </div>
+                }
             </div>
-        </div>
-    }
 
-    @if (Model.Relations != null && Model.Relations.Any())
-    {
-        <div class="row mt-4">
-            <div class="col-md-12">
-                <div class="card">
-                    <div class="card-header">
-                        <h5>🔗 資料表關聯性</h5>
+            <div class="tab-panel" role="tabpanel" id="panel-relations" aria-labelledby="tab-relations" @(panel == "relations" ? null : "hidden")>
+                @if (relations != null && relations.Count > 0)
+                {
+                    <div class="panel-toolbar">
+                        <p>@relations.Count 條關聯。點一列看父欄、子欄與約束名稱。</p>
+                        <button type="submit" name="action" value="relations" class="btn btn-sm btn-ghost">重新載入</button>
                     </div>
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-striped">
-                                <thead class="table-dark">
-                                    <tr>
-                                        <th>父資料表</th>
-                                        <th>父欄位</th>
-                                        <th>子資料表</th>
-                                        <th>子欄位</th>
-                                        <th>約束名稱</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var relation in Model.Relations)
-                                    {
-                                        <tr>
-                                            <td><strong>@relation.ParentTable</strong></td>
-                                            <td>@relation.ParentColumn</td>
-                                            <td><strong>@relation.ChildTable</strong></td>
-                                            <td>@relation.ChildColumn</td>
-                                            <td><code>@relation.ConstraintName</code></td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
+                    <div class="schema-split" data-picker>
+                        <div class="schema-list" role="group" aria-label="關聯">
+                            @for (var i = 0; i < relations.Count; i++)
+                            {
+                                var relation = relations[i];
+                                <button type="button" class="pick" data-pick id="rel-tab-@i" aria-controls="rel-@i" aria-pressed="@(i == 0 ? "true" : "false")">
+                                    <span class="pick-line">
+                                        <span class="mono">@relation.ParentTable</span>
+                                        <svg class="relation-arrow" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+                                            <path d="M3 8h10M9 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                        </svg>
+                                        <span class="mono">@relation.ChildTable</span>
+                                    </span>
+                                </button>
+                            }
+                        </div>
+                        <div class="schema-detail">
+                            @for (var i = 0; i < relations.Count; i++)
+                            {
+                                var relation = relations[i];
+                                <article id="rel-@i" @(i == 0 ? null : "hidden")>
+                                    <h2 class="h6">關聯</h2>
+                                    <dl class="def-list">
+                                        <dt>父資料表</dt>
+                                        <dd class="mono">@relation.ParentTable</dd>
+                                        <dt>父欄位</dt>
+                                        <dd class="mono">@relation.ParentColumn</dd>
+                                        <dt>子資料表</dt>
+                                        <dd class="mono">@relation.ChildTable</dd>
+                                        <dt>子欄位</dt>
+                                        <dd class="mono">@relation.ChildColumn</dd>
+                                        <dt>約束名稱</dt>
+                                        <dd class="mono">@relation.ConstraintName</dd>
+                                    </dl>
+                                </article>
+                            }
                         </div>
                     </div>
-                </div>
+                }
+                else
+                {
+                    <div class="empty-panel">
+                        <h2>關聯</h2>
+                        <p>這裡只列這張表的父表與子表，不用把整庫的關聯表捲出來。</p>
+                        <button type="submit" name="action" value="relations" class="btn btn-primary">載入關聯</button>
+                    </div>
+                }
             </div>
         </div>
-    }
+    </form>
 </div>
