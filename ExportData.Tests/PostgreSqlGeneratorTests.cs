@@ -111,6 +111,15 @@ public sealed class PostgreSqlGeneratorTests
         Assert.Equal("SELECT * FROM \"public\".\"orders\" LIMIT 20", sql);
     }
 
+    [Fact(DisplayName = "分析預覽不套用匯出筆數")]
+    public void AllRecords_PublicOrders_HasNoLimit()
+    {
+        var sql = new GenSqlForPostgreSql(new ConfigDbControlSection { Size = 20 })
+            .GetSqlAllRecords("public.orders");
+
+        Assert.Equal("SELECT * FROM \"public\".\"orders\"", sql);
+    }
+
     [Fact(DisplayName = "識別字裡的雙引號加倍")]
     public void Records_EmbeddedQuote_IsDoubled()
     {

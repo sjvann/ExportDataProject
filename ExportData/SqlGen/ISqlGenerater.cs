@@ -10,6 +10,7 @@ namespace ExportData.SqlGen
         void CloseConnection(IDbConnection conn);
         string GetSqlAllTableNameList();
         string GetSqlRecords(string tableName);
+        string GetSqlAllRecords(string tableName);
         Task<TableSchema?> GetTableSchemaAsync(IDbConnection connection, string tableName);
         Task<IEnumerable<TableRelation>?> GetTableRelationsAsync(IDbConnection connection);
         Task<DatabaseInfo?> GetDatabaseInfoAsync(IDbConnection connection);

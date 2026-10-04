@@ -49,6 +49,26 @@ namespace ExportData
             }
         }
 
+        public async Task<IEnumerable<Dictionary<string, object>>> GetAllDataAsync(string tableName)
+        {
+            if (_sqlProvider == null)
+            {
+                throw new InvalidOperationException("無法建立資料庫查詢");
+            }
+
+            var sql = _sqlProvider.GetSqlAllRecords(tableName);
+            if (string.IsNullOrEmpty(sql))
+            {
+                throw new InvalidOperationException("無法組成資料查詢");
+            }
+
+            _logger.LogInformation("Executing SQL: {Sql}", sql);
+            using var connection = _sqlProvider.GetConnection();
+            var result = await connection.QueryAsync<Dictionary<string, object>>(sql, commandTimeout: 300);
+            _logger.LogInformation("Retrieved {Count} records from table: {TableName}", result.Count(), tableName);
+            return result;
+        }
+
         public async Task<string[]?> GetTableNamesAsync()
         {
             try

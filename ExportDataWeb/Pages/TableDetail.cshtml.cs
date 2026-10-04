@@ -1,3 +1,4 @@
+using System.Data;
 using ExportData;
 using ExportData.Models.Database;
 using ExportDataWeb.Services;
@@ -20,16 +21,34 @@ namespace ExportDataWeb.Pages
         [BindProperty(SupportsGet = true)]
         public string TableName { get; set; } = string.Empty;
 
-        public string? Message { get; set; }
-        public bool IsSuccess { get; set; }
+        [BindProperty(SupportsGet = true)]
+        public int Depth { get; set; } = 1;
+
+        [BindProperty(SupportsGet = true)]
+        public string? Panel { get; set; }
+
         public bool HasConnection { get; private set; }
         public string ActivePanel { get; private set; } = "schema";
-        public TableSchema? TableSchema { get; set; }
-        public IEnumerable<Dictionary<string, object>>? SampleData { get; set; }
-        public IEnumerable<TableRelation>? Relations { get; set; }
+        public TableSchema? TableSchema { get; private set; }
+        public string? SchemaError { get; private set; }
+        public List<Dictionary<string, object>>? SampleData { get; private set; }
+        public IReadOnlyList<string> SampleColumnNames { get; private set; } = [];
+        public string? SampleError { get; private set; }
+        public ErGraph? Diagram { get; private set; }
+        public ErCanvas? Canvas { get; private set; }
+        public string? DiagramError { get; private set; }
 
         public async Task OnGetAsync()
         {
+            if (Depth < 1)
+            {
+                Depth = 1;
+            }
+
+            ActivePanel = string.Equals(Panel, "relations", StringComparison.OrdinalIgnoreCase)
+                ? "relations"
+                : "schema";
+
             if (string.IsNullOrWhiteSpace(TableName))
             {
                 return;
@@ -41,56 +60,59 @@ namespace ExportDataWeb.Pages
                 return;
             }
 
-            await LoadSchemaAsync(dbService, announce: false);
+            await LoadSchemaAsync(dbService);
+            await LoadSampleAsync(dbService);
+            await LoadDiagramAsync(dbService);
         }
 
-        public async Task<IActionResult> OnPostAsync(string action)
+        public static object? ReadCell(IReadOnlyDictionary<string, object> row, string column)
         {
-            if (string.IsNullOrWhiteSpace(TableName))
+            if (row.TryGetValue(column, out var direct))
             {
-                Message = "請指定資料表名稱";
-                IsSuccess = false;
-                return Page();
+                return direct is DBNull ? null : direct;
             }
 
-            if (action is "schema" or "sample" or "relations")
+            foreach (var pair in row)
             {
-                ActivePanel = action;
-            }
-
-            var dbService = OpenSavedConnection();
-            if (dbService == null)
-            {
-                return Page();
-            }
-
-            try
-            {
-                switch (action)
+                if (string.Equals(pair.Key, column, StringComparison.OrdinalIgnoreCase))
                 {
-                    case "schema":
-                        await LoadSchemaAsync(dbService, announce: true);
-                        break;
-                    case "sample":
-                        await LoadSampleDataAsync(dbService);
-                        break;
-                    case "relations":
-                        await LoadRelationsAsync(dbService);
-                        break;
-                    default:
-                        Message = "未知的操作";
-                        IsSuccess = false;
-                        break;
+                    return pair.Value is DBNull ? null : pair.Value;
                 }
             }
-            catch (Exception ex)
+
+            return null;
+        }
+
+        public static string LengthText(ColumnInfo column)
+        {
+            if (column.MaxLength.HasValue)
             {
-                _logger.LogError(ex, "Error during {Action} operation for table {TableName}", action, TableName);
-                Message = $"操作失敗: {ex.Message}";
-                IsSuccess = false;
+                return column.MaxLength.Value.ToString();
             }
 
-            return Page();
+            if (column.Precision.HasValue && column.Scale.HasValue)
+            {
+                return $"{column.Precision},{column.Scale}";
+            }
+
+            if (column.Precision.HasValue)
+            {
+                return column.Precision.Value.ToString();
+            }
+
+            return string.Empty;
+        }
+
+        public static string ReferenceText(ColumnInfo column)
+        {
+            if (!column.IsForeignKey || string.IsNullOrEmpty(column.ReferencedTable))
+            {
+                return string.Empty;
+            }
+
+            return string.IsNullOrEmpty(column.ReferencedColumn)
+                ? column.ReferencedTable
+                : $"{column.ReferencedTable}.{column.ReferencedColumn}";
         }
 
         private DbService? OpenSavedConnection()
@@ -99,102 +121,90 @@ namespace ExportDataWeb.Pages
             if (saved == null)
             {
                 HasConnection = false;
-                IsSuccess = false;
                 return null;
             }
 
             HasConnection = true;
-            var config = saved.ToDbConfig();
-            config.Size = 10;
-            return new DbService(config, _loggerFactory.CreateLogger<DbService>());
+            return new DbService(saved.ToDbConfig(), _loggerFactory.CreateLogger<DbService>());
         }
 
-        private async Task LoadSchemaAsync(DbService dbService, bool announce)
+        private async Task LoadSchemaAsync(DbService dbService)
         {
             try
             {
                 TableSchema = await dbService.GetTableSchemaAsync(TableName);
-
-                if (TableSchema != null)
+                if (TableSchema == null)
                 {
-                    if (announce)
-                    {
-                        Message = $"已載入資料表 {TableName} 的結構";
-                    }
-
-                    IsSuccess = true;
-                }
-                else
-                {
-                    Message = $"無法取得資料表 {TableName} 的結構";
-                    IsSuccess = false;
+                    SchemaError = $"無法取得資料表 {TableName} 的結構";
                 }
             }
             catch (Exception ex)
             {
-                Message = $"載入結構失敗: {ex.Message}";
-                IsSuccess = false;
+                _logger.LogError(ex, "載入資料表 {TableName} 的結構失敗", TableName);
+                SchemaError = ex.Message;
             }
         }
 
-        private async Task LoadSampleDataAsync(DbService dbService)
+        private async Task LoadSampleAsync(DbService dbService)
         {
             try
             {
-                SampleData = await dbService.GetDataSetAsync(TableName);
-                
-                if (SampleData != null && SampleData.Any())
+                SampleData = (await dbService.GetAllDataAsync(TableName)).ToList();
+                if (TableSchema != null && TableSchema.Columns.Count > 0)
                 {
-                    Message = $"已載入資料表 {TableName} 的範例資料，共 {SampleData.Count()} 筆";
-                    IsSuccess = true;
+                    SampleColumnNames = TableSchema.Columns.Select(column => column.ColumnName).ToList();
                 }
-                else
+                else if (SampleData.Count > 0)
                 {
-                    Message = $"資料表 {TableName} 沒有資料或無法存取";
-                    IsSuccess = false;
+                    SampleColumnNames = SampleData[0].Keys.ToList();
                 }
             }
             catch (Exception ex)
             {
-                Message = $"載入範例資料失敗: {ex.Message}";
-                IsSuccess = false;
+                _logger.LogError(ex, "載入資料表 {TableName} 的資料失敗", TableName);
+                SampleError = ex.Message;
             }
         }
 
-        private async Task LoadRelationsAsync(DbService dbService)
+        private async Task LoadDiagramAsync(DbService dbService)
         {
             try
             {
-                var allRelations = await dbService.GetTableRelationsAsync();
-                
-                if (allRelations != null)
+                var relations = await dbService.GetTableRelationsAsync();
+                if (relations == null)
                 {
-                    // Filter relations related to current table
-                    Relations = allRelations.Where(r => 
-                        r.ParentTable.Equals(TableName, StringComparison.OrdinalIgnoreCase) ||
-                        r.ChildTable.Equals(TableName, StringComparison.OrdinalIgnoreCase));
-                    
-                    if (Relations.Any())
+                    DiagramError = "無法取得資料表關聯";
+                    return;
+                }
+
+                var preview = ErNeighborhood.Build(TableName, Depth, relations, null);
+                var schemas = new Dictionary<string, TableSchema?>(StringComparer.OrdinalIgnoreCase);
+                foreach (var node in preview.Nodes)
+                {
+                    if (string.Equals(node.TableName, TableName, StringComparison.OrdinalIgnoreCase))
                     {
-                        Message = $"找到 {Relations.Count()} 個與資料表 {TableName} 相關的關聯";
-                        IsSuccess = true;
+                        schemas[node.TableName] = TableSchema;
+                        continue;
                     }
-                    else
+
+                    try
                     {
-                        Message = $"資料表 {TableName} 沒有找到相關的關聯";
-                        IsSuccess = false;
+                        schemas[node.TableName] = await dbService.GetTableSchemaAsync(node.TableName);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "載入關聯表 {TableName} 的結構失敗", node.TableName);
+                        schemas[node.TableName] = null;
                     }
                 }
-                else
-                {
-                    Message = "無法取得資料表關聯";
-                    IsSuccess = false;
-                }
+
+                Diagram = ErNeighborhood.Build(TableName, Depth, relations, schemas);
+                Canvas = ErDiagramLayout.Arrange(Diagram);
             }
             catch (Exception ex)
             {
-                Message = $"載入關聯失敗: {ex.Message}";
-                IsSuccess = false;
+                _logger.LogError(ex, "載入資料表 {TableName} 的關聯失敗", TableName);
+                DiagramError = ex.Message;
             }
         }
     }

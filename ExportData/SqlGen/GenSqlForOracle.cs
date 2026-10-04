@@ -37,6 +37,11 @@ namespace ExportData.SqlGen
         {
             return $"SELECT * FROM {config.Owner}.{tableName} WHERE rownum <= {config.Size}";
         }
+
+        public string GetSqlAllRecords(string tableName)
+        {
+            return $"SELECT * FROM {config.Owner}.{tableName}";
+        }
         public string GetSqlAllTableNameList()
         {
             StringBuilder sb = new("SELECT");

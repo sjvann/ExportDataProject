@@ -37,6 +37,11 @@ namespace ExportData.SqlGen
         {
           return $"SELECT * FROM {tableName} LIMIT {config.Size}";
         }
+
+        public string GetSqlAllRecords(string tableName)
+        {
+          return $"SELECT * FROM {tableName}";
+        }
         public string GetSqlAllTableNameList()
         {
            return config.TableType == EnumTableType.Table

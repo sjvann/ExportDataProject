@@ -134,6 +134,12 @@ namespace ExportData.SqlGen
             return BuildRecordsSql(tableName, config.Size);
         }
 
+        public string GetSqlAllRecords(string tableName)
+        {
+            var quoted = TryQuoteQualifiedName(tableName);
+            return quoted == null ? string.Empty : $"SELECT * FROM {quoted}";
+        }
+
         public string GetSqlAllTableNameList()
         {
             return BuildTableListSql(config.TableType, config.Prefix);
