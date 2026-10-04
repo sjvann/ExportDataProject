@@ -1,9 +1,31 @@
-# 析庫
+<p align="center">
+  <img src="docs/images/app-icon.png" width="96" height="96" alt="">
+</p>
+
+<h1 align="center">析庫</h1>
+
+<p align="center">舊系統資料庫解析</p>
+
+<p align="center">
+  <a href="https://github.com/sjvann/ExportDataProject/releases/tag/v0.1.0"><img alt="版本 0.1.0" src="https://img.shields.io/badge/%E7%89%88%E6%9C%AC-0.1.0-2563EB?style=flat"></a>
+  <a href="https://dotnet.microsoft.com/download/dotnet/10.0"><img alt=".NET 10" src="https://img.shields.io/badge/.NET-10-512BD4?style=flat&logo=dotnet&logoColor=white"></a>
+  <a href="#安裝"><img alt="平台：Windows、Linux、macOS" src="https://img.shields.io/badge/%E5%B9%B3%E5%8F%B0-Windows%20%7C%20Linux%20%7C%20macOS-1E3A5F?style=flat"></a>
+  <img alt="介面語言：繁體中文" src="https://img.shields.io/badge/%E8%AA%9E%E8%A8%80-%E7%B9%81%E9%AB%94%E4%B8%AD%E6%96%87-475569?style=flat">
+</p>
+
+<p align="center">
+  <a href="https://github.com/sjvann/ExportDataProject/releases/tag/v0.1.0"><img alt="下載 v0.1.0" src="https://img.shields.io/badge/%E4%B8%8B%E8%BC%89-v0.1.0-2563EB?style=for-the-badge"></a>
+  <a href="#建置"><img alt="從原始碼建置與測試" src="https://img.shields.io/badge/%E5%8E%9F%E5%A7%8B%E7%A2%BC-%E5%BB%BA%E7%BD%AE%E8%88%87%E6%B8%AC%E8%A9%A6-1E3A5F?style=for-the-badge"></a>
+</p>
 
 本機的舊系統資料庫工具。連上 SQLite、SQL Server、MySQL、Oracle 或 PostgreSQL 之後，可以查看資料表清單、欄位結構、少量範例與宣告關聯，並把資料表匯出成 CSV。畫面與命令列提示都是繁體中文。
 
 > [!NOTE]
 > 工作台目前做到連線、分析結構與 CSV 匯出。`ExportData.Core` 已能保存解析專案（盤點快照、欄位確認狀態、宣告關聯）。欄位用途確認與分析包匯出還沒接到畫面。
+
+| 看懂結構 | 對照真實資料 | 帶走結果 |
+| --- | --- | --- |
+| 資料表、欄位與宣告關聯 | 詳細頁載入 10 筆範例 | UTF-8 CSV，可壓成 ZIP |
 
 ## 兩種用法
 

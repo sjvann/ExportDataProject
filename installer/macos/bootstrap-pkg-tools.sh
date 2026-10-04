@@ -3,7 +3,7 @@
 set -euo pipefail
 PREFIX="${HOME}/.local/exportdata-pkgtools"
 mkdir -p "$PREFIX/bin" "$PREFIX/debs" "$PREFIX/src"
-export PATH="${PREFIX}/usr/bin:${PREFIX}/bin:${PATH}"
+export PATH="${PREFIX}/bin:${PREFIX}/usr/bin:${PATH}"
 export LD_LIBRARY_PATH="${PREFIX}/usr/lib/x86_64-linux-gnu:${PREFIX}/lib/x86_64-linux-gnu${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}"
 
 if [[ -x "${PREFIX}/bin/mkbom" && -x "${PREFIX}/usr/bin/cpio" ]]; then
@@ -71,9 +71,22 @@ fi
 if [[ ! -d "${PREFIX}/src/bomutils/.git" ]]; then
   git clone --depth 1 https://github.com/hogliux/bomutils.git "${PREFIX}/src/bomutils"
 fi
-export CPATH="${PREFIX}/usr/include:${PREFIX}/usr/include/x86_64-linux-gnu${CPATH:+:${CPATH}}"
-export CPLUS_INCLUDE_PATH="$CPATH"
 export LIBRARY_PATH="${PREFIX}/usr/lib/x86_64-linux-gnu:/usr/lib/x86_64-linux-gnu${LIBRARY_PATH:+:${LIBRARY_PATH}}"
+# 把 libc 標頭放在 libstdc++ 之後，否則 include_next 找不到 stdlib.h。
+write_cc_wrapper() {
+  local name="$1"
+  local real="$2"
+  cat > "${PREFIX}/bin/${name}" <<EOF
+#!/bin/bash
+export LD_LIBRARY_PATH="${PREFIX}/usr/lib/x86_64-linux-gnu:\${LD_LIBRARY_PATH:-}"
+exec "${PREFIX}/usr/bin/${real}" -idirafter "${PREFIX}/usr/include" -idirafter "${PREFIX}/usr/include/x86_64-linux-gnu" "\$@"
+EOF
+  chmod 0755 "${PREFIX}/bin/${name}"
+}
+write_cc_wrapper gcc x86_64-linux-gnu-gcc-13
+write_cc_wrapper g++ x86_64-linux-gnu-g++-13
+write_cc_wrapper cc x86_64-linux-gnu-gcc-13
+write_cc_wrapper c++ x86_64-linux-gnu-g++-13
 make -C "${PREFIX}/src/bomutils" -j"$(nproc)"
 cp -f "${PREFIX}/src/bomutils/build/bin/mkbom" "${PREFIX}/bin/mkbom"
 chmod 0755 "${PREFIX}/bin/mkbom"
