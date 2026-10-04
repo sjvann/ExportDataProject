@@ -1,6 +1,7 @@
 using ExportData;
 using ExportData.Interfaces;
 using ExportData.Models.Config;
+using ExportDataWeb.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -35,6 +36,17 @@ builder.Services.AddSingleton(builder.Configuration.GetSection("DeIdentification
 
 builder.Services.AddTransient<IDbService, DbService>();
 builder.Services.AddTransient<IExportService, ExportService>();
+builder.Services.AddHttpClient("updates", client =>
+{
+    client.DefaultRequestHeaders.UserAgent.ParseAdd("ExportData");
+    client.Timeout = TimeSpan.FromMinutes(30);
+});
+builder.Services.AddSingleton(sp =>
+{
+    var http = sp.GetRequiredService<IHttpClientFactory>().CreateClient("updates");
+    var logger = sp.GetRequiredService<ILogger<AppUpdateCoordinator>>();
+    return new AppUpdateCoordinator(http, logger, AppUpdateCoordinator.CreateRuntime());
+});
 
 var app = builder.Build();
 
@@ -53,6 +65,22 @@ app.UseSession();
 
 app.UseAuthorization();
 
+app.MapGet("/update", (AppUpdateCoordinator updates) => Results.Json(updates.GetSnapshot()));
+app.MapPost("/update/check", (AppUpdateCoordinator updates, bool? force) =>
+{
+    updates.QueueCheck(force == true);
+    return Results.Json(updates.GetSnapshot());
+});
+app.MapPost("/update/download", (HttpRequest request, AppUpdateCoordinator updates) =>
+{
+    if (!string.Equals(request.Headers["X-Requested-With"], "fetch", StringComparison.OrdinalIgnoreCase))
+    {
+        return Results.BadRequest();
+    }
+
+    updates.QueueDownload();
+    return Results.Json(updates.GetSnapshot());
+});
 app.MapStaticAssets();
 app.MapRazorPages()
    .WithStaticAssets();

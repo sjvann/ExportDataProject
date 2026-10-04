@@ -4,7 +4,7 @@
   用法：powershell -File installer/build-installers.ps1
 #>
 param(
-  [string]$Version = "0.1.0",
+  [string]$Version = "",
   [ValidateSet("all", "win", "linux", "osx")]
   [string]$Target = "all"
 )
@@ -12,6 +12,11 @@ param(
 $ErrorActionPreference = "Stop"
 $Root = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 Set-Location $Root
+if ([string]::IsNullOrWhiteSpace($Version)) {
+  [xml]$versionXml = Get-Content (Join-Path $Root "Directory.Build.props")
+  $Version = [string]$versionXml.Project.PropertyGroup.Version
+  if ([string]::IsNullOrWhiteSpace($Version)) { throw "Directory.Build.props 沒有 Version" }
+}
 $env:DOTNET_CLI_TELEMETRY_OPTOUT = "1"
 $env:DOTNET_NOLOGO = "1"
 
@@ -63,6 +68,8 @@ function Write-UsageText {
 - Windows：關掉標題為「析庫」的主控台視窗。
 - Linux：執行 exportdata-workbench stop
 - macOS：在活動監視器結束 ExportDataWeb。
+
+有新版本時，工作台上方會顯示下載進度。下載完成後會開啟安裝程式。
 
 命令列匯出：
 - Windows 開始功能表「析庫命令列」
@@ -189,6 +196,7 @@ function Publish-Rid {
   Invoke-Native "dotnet" @(
     "publish", "ExportDataWeb/ExportDataWeb.csproj",
     "-c", "Release", "-r", $Rid, "--self-contained", "true",
+    "-p:Version=$Version", "-p:InformationalVersion=$Version",
     "-o", $webOut,
     "-p:DebugType=none", "-p:DebugSymbols=false",
     "-p:ErrorOnDuplicatePublishOutputFiles=false",
@@ -202,6 +210,7 @@ function Publish-Rid {
   Invoke-Native "dotnet" @(
     "publish", "ExportData/ExportData.csproj",
     "-c", "Release", "-r", $Rid, "--self-contained", "true",
+    "-p:Version=$Version", "-p:InformationalVersion=$Version",
     "-o", $cliOut,
     "-p:DebugType=none", "-p:DebugSymbols=false",
     "-p:SatelliteResourceLanguages=en%3Bzh-Hant"

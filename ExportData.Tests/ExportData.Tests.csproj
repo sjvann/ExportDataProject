@@ -18,6 +18,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ExportData\ExportData.csproj" />
+    <ProjectReference Include="..\ExportDataWeb\ExportDataWeb.csproj" />
   </ItemGroup>
 
 </Project>

@@ -7,14 +7,14 @@
 <p align="center">舊系統資料庫解析</p>
 
 <p align="center">
-  <a href="https://github.com/sjvann/ExportDataProject/releases/tag/v0.1.0"><img alt="版本 0.1.0" src="https://img.shields.io/badge/%E7%89%88%E6%9C%AC-0.1.0-2563EB?style=flat"></a>
+  <a href="https://github.com/sjvann/ExportDataProject/releases/tag/v0.1.1"><img alt="版本 0.1.1" src="https://img.shields.io/badge/%E7%89%88%E6%9C%AC-0.1.1-2563EB?style=flat"></a>
   <a href="https://dotnet.microsoft.com/download/dotnet/10.0"><img alt=".NET 10" src="https://img.shields.io/badge/.NET-10-512BD4?style=flat&logo=dotnet&logoColor=white"></a>
   <a href="#安裝"><img alt="平台：Windows、Linux、macOS" src="https://img.shields.io/badge/%E5%B9%B3%E5%8F%B0-Windows%20%7C%20Linux%20%7C%20macOS-1E3A5F?style=flat"></a>
   <img alt="介面語言：繁體中文" src="https://img.shields.io/badge/%E8%AA%9E%E8%A8%80-%E7%B9%81%E9%AB%94%E4%B8%AD%E6%96%87-475569?style=flat">
 </p>
 
 <p align="center">
-  <a href="https://github.com/sjvann/ExportDataProject/releases/tag/v0.1.0"><img alt="下載 v0.1.0" src="https://img.shields.io/badge/%E4%B8%8B%E8%BC%89-v0.1.0-2563EB?style=for-the-badge"></a>
+  <a href="https://github.com/sjvann/ExportDataProject/releases/tag/v0.1.1"><img alt="下載 v0.1.1" src="https://img.shields.io/badge/%E4%B8%8B%E8%BC%89-v0.1.1-2563EB?style=for-the-badge"></a>
   <a href="#建置"><img alt="從原始碼建置與測試" src="https://img.shields.io/badge/%E5%8E%9F%E5%A7%8B%E7%A2%BC-%E5%BB%BA%E7%BD%AE%E8%88%87%E6%B8%AC%E8%A9%A6-1E3A5F?style=for-the-badge"></a>
 </p>
 
@@ -58,13 +58,15 @@
 
 ## 安裝
 
-一般使用請到 [GitHub Releases](https://github.com/sjvann/ExportDataProject/releases/tag/v0.1.0) 下載安裝檔。安裝檔已含 .NET 執行環境。
+一般使用請到 [GitHub Releases](https://github.com/sjvann/ExportDataProject/releases/tag/v0.1.1) 下載安裝檔。安裝檔已含 .NET 執行環境。
 
 | 系統 | 檔案 | 安裝後 |
 | --- | --- | --- |
-| Windows x64 | `ExportData-Setup-0.1.0-win-x64.exe` | 開始功能表開啟「析庫」 |
-| Linux x64（Debian、Ubuntu） | `exportdata_0.1.0_amd64.deb` | `sudo dpkg -i exportdata_0.1.0_amd64.deb`，應用程式清單開啟「析庫」 |
-| macOS x64 | `ExportData-0.1.0-osx-x64.pkg` | 打開安裝程式 |
+| Windows x64 | `ExportData-Setup-0.1.1-win-x64.exe` | 開始功能表開啟「析庫」 |
+| Linux x64（Debian、Ubuntu） | `exportdata_0.1.1_amd64.deb` | `sudo dpkg -i exportdata_0.1.1_amd64.deb`，應用程式清單開啟「析庫」 |
+| macOS x64 | `ExportData-0.1.1-osx-x64.pkg` | 打開安裝程式 |
+
+工作台啟動後會向 GitHub Releases 檢查是否有較新版本。有新版本時，畫面上方會說明差異，按下「下載並更新」可看到已下載大小、總大小與百分比。Windows 安裝版下載完成後會開啟安裝程式。
 
 工作台位址是 http://127.0.0.1:5107 。Windows 關掉標題為「析庫」的主控台視窗即停止；Linux 執行 `exportdata-workbench stop`；macOS 在活動監視器結束 `ExportDataWeb`。命令列在 Windows 開始功能表的「析庫命令列」，在 Linux 與 macOS 終端機執行 `exportdata --interactive`。
 

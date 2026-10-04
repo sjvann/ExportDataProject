@@ -29,6 +29,12 @@
             <a class="app-nav-link" asp-area="" asp-page="/Privacy">隱私</a>
         </nav>
     </header>
+    <div id="app-update" class="app-update" hidden>
+        <p id="app-update-message" class="app-update-message" role="status"></p>
+        <p id="app-update-detail" class="app-update-detail" hidden></p>
+        <progress id="app-update-meter" hidden max="100" aria-label="下載進度"></progress>
+        <button type="button" class="btn btn-primary btn-sm" id="app-update-action" hidden>下載並更新</button>
+    </div>
     <main id="main" class="app-main">
         @RenderBody()
     </main>
@@ -36,6 +42,7 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/update.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
     <script src="~/js/workspace.js" asp-append-version="true"></script>
 </body>

@@ -89,6 +89,39 @@ h3,
   top: 8px;
 }
 
+.app-update {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 8px 16px;
+  background: #e8eef5;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.app-update[hidden] {
+  display: none !important;
+}
+
+.app-update-message {
+  margin: 0;
+  flex: 1 1 220px;
+}
+
+.app-update-detail {
+  margin: 0;
+  flex: 1 1 100%;
+  color: var(--color-muted-foreground);
+}
+
+.app-update progress {
+  flex: 1 1 140px;
+  width: 160px;
+  max-width: 220px;
+  height: 8px;
+  accent-color: var(--color-primary);
+}
+
 .app-header {
   height: var(--header-h);
   flex: none;
