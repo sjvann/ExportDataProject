@@ -127,15 +127,15 @@ public sealed class ErNeighborhoodTests
         var schemas = new Dictionary<string, TableSchema?>(StringComparer.OrdinalIgnoreCase)
         {
             ["Orders"] = Table(Column("Id", primary: true, nullable: false)),
-            ["Customers"] = null
+            ["OrderLines"] = null
         };
 
         var graph = ErNeighborhood.Build("Orders", 1, OrderChain(), schemas);
-        var customers = Assert.Single(graph.Nodes, node => node.TableName == "Customers");
-        var edge = Assert.Single(graph.Edges, item => item.ParentTable == "Customers");
+        var orderLines = Assert.Single(graph.Nodes, node => node.TableName == "OrderLines");
+        var edge = Assert.Single(graph.Edges, item => item.ChildTable == "OrderLines");
 
-        Assert.False(customers.SchemaLoaded);
-        Assert.Empty(customers.KeyColumns);
+        Assert.False(orderLines.SchemaLoaded);
+        Assert.Empty(orderLines.KeyColumns);
         Assert.Equal(ErChildEnd.Unknown, edge.ChildEnd);
     }
 

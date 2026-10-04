@@ -226,4 +226,13 @@ public static class ErDiagramLayout
     private static (double X, double Y) Unit(double x, double y)
     {
         var length = Math.Sqrt(x * x + y * y);
-        if (lengt
+        if (length < 0.5)
+        {
+            return (1, 0);
+        }
+
+        return (x / length, y / length);
+    }
+
+    private static string N(double value) => value.ToString("0.##", CultureInfo.InvariantCulture);
+}

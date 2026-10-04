@@ -32,3 +32,9 @@
 {"utc":"2026-10-04T04:00:20.8551772+00:00","tool":"build","ok":true,"ms":6292,"args":{"mode":"one","path":"ExportDataWeb"}}
 {"utc":"2026-10-04T04:00:20.8645267+00:00","tool":"list_services","ok":true,"ms":0,"args":{}}
 {"utc":"2026-10-04T04:00:35.7951939+00:00","tool":"start_service","ok":true,"ms":7764,"args":{"id":"exportdataweb"}}
+{"utc":"2026-10-04T04:31:02.0994496+00:00","tool":"build","ok":false,"ms":9989,"args":{"mode":"one","path":"ExportDataWeb/ExportDataWeb.csproj"}}
+{"utc":"2026-10-04T04:31:36.8164431+00:00","tool":"build","ok":false,"ms":4364,"args":{"mode":"one","path":"ExportDataWeb/ExportDataWeb.csproj"}}
+{"utc":"2026-10-04T04:32:36.2578889+00:00","tool":"build","ok":false,"ms":18491,"args":{"mode":"one","path":"ExportDataWeb/ExportDataWeb.csproj"}}
+{"utc":"2026-10-04T04:32:41.2248408+00:00","tool":"list_services","ok":true,"ms":0,"args":{}}
+{"utc":"2026-10-04T04:32:47.1103391+00:00","tool":"stop_service","ok":true,"ms":148,"args":{"id":"exportdataweb"}}
+{"utc":"2026-10-04T04:32:56.0840116+00:00","tool":"build","ok":true,"ms":3751,"args":{"mode":"one","path":"ExportDataWeb/ExportDataWeb.csproj"}}

@@ -1,4 +1,5 @@
 @page
+@using ExportDataWeb.Services
 @model TableDetailModel
 @{
     ViewData["Title"] = Model.TableName;
@@ -214,7 +215,7 @@
                             {
                                 <p class="er-note">目錄中沒有宣告關聯</p>
                             }
-                            <svg class="er-svg" width="@canvas.Width.ToString("0")" height="@canvas.Height.ToString("0")" viewBox="0 0 @canvas.Width.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) @canvas.Height.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)" role="img" aria-label="@Model.TableName 的實體關係圖">
+                            <svg class="er-svg" width="@ErDiagramLayout.Int(canvas.Width)" height="@ErDiagramLayout.Int(canvas.Height)" viewBox="0 0 @ErDiagramLayout.Px(canvas.Width) @ErDiagramLayout.Px(canvas.Height)" role="img" aria-label="@Model.TableName 的實體關係圖">
                                 @for (var i = 0; i < canvas.Wires.Count; i++)
                                 {
                                     var wire = canvas.Wires[i];
@@ -232,44 +233,44 @@
                                         }
                                         @if (wire.ZeroX.HasValue && wire.ZeroY.HasValue)
                                         {
-                                            <circle cx="@wire.ZeroX.Value.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)" cy="@wire.ZeroY.Value.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)" r="4.5" fill="#f8fafc" stroke="#1e3a5f" stroke-width="1.4" />
+                                            <circle cx="@ErDiagramLayout.Px(wire.ZeroX.Value)" cy="@ErDiagramLayout.Px(wire.ZeroY.Value)" r="4.5" fill="#f8fafc" stroke="#1e3a5f" stroke-width="1.4" />
                                         }
                                         @if (wire.LabelX.HasValue && wire.LabelY.HasValue)
                                         {
-                                            <text x="@wire.LabelX.Value.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)" y="@wire.LabelY.Value.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)" fill="#475569" font-size="11">未明</text>
+                                            <foreignObject x="@ErDiagramLayout.Px(wire.LabelX.Value)" y="@ErDiagramLayout.Px(wire.LabelY.Value - 12)" width="40" height="16">
+                                                <div xmlns="http://www.w3.org/1999/xhtml" class="er-unknown">未明</div>
+                                            </foreignObject>
                                         }
                                     </g>
                                 }
-                                @for (var i = 0; i < canvas.Boxes.Count; i++)
+                                @foreach (var box in canvas.Boxes)
                                 {
-                                    var box = canvas.Boxes[i];
                                     var current = string.Equals(box.Node.TableName, Model.TableName, StringComparison.OrdinalIgnoreCase);
+                                    var stroke = current ? "#1e3a5f" : "#cbd5e1";
+                                    var header = current ? "#1e3a5f" : "#e8eef5";
+                                    var weight = current ? "2" : "1";
                                     var lines = ErDiagramLayout.BodyLines(box.Node);
                                     var href = $"/TableDetail?tableName={Uri.EscapeDataString(box.Node.TableName)}&depth={Model.Depth}&panel=relations";
                                     <g>
-                                        <rect x="@box.X.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)" y="@box.Y.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)" width="@box.Width.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)" height="@box.Height.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)" rx="8" fill="#ffffff" stroke="@(current ? "#1e3a5f" : "#cbd5e1")" stroke-width="@(current ? "2" : "1")" />
-                                        <rect x="@box.X.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)" y="@box.Y.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)" width="@box.Width.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)" height="@box.HeaderHeight.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)" rx="8" fill="@(current ? "#1e3a5f" : "#e8eef5")" />
-                                        <rect x="@box.X.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)" y="@((box.Y + box.HeaderHeight - 8).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))" width="@box.Width.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)" height="8" fill="@(current ? "#1e3a5f" : "#e8eef5")" />
-                                        <clipPath id="er-clip-@i">
-                                            <rect x="@((box.X + 8).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))" y="@box.Y.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)" width="@((box.Width - 16).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))" height="@box.Height.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)" />
-                                        </clipPath>
-                                        <g clip-path="url(#er-clip-@i)">
-                                            @if (current)
-                                            {
-                                                <text x="@((box.X + 12).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))" y="@((box.Y + 21).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))" fill="#ffffff" font-size="13" font-weight="700">@box.Node.TableName</text>
-                                            }
-                                            else
-                                            {
-                                                <a href="@href">
-                                                    <rect x="@box.X.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)" y="@box.Y.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)" width="@box.Width.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)" height="@box.HeaderHeight.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)" fill="transparent" />
-                                                    <text x="@((box.X + 12).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))" y="@((box.Y + 21).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))" fill="#1e3a5f" font-size="13" font-weight="700">@box.Node.TableName</text>
-                                                </a>
-                                            }
-                                            @for (var line = 0; line < lines.Count; line++)
-                                            {
-                                                <text x="@((box.X + 12).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))" y="@((box.Y + box.HeaderHeight + 16 + line * 20).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))" fill="#0f172a" font-size="12">@lines[line]</text>
-                                            }
-                                        </g>
+                                        <rect x="@ErDiagramLayout.Px(box.X)" y="@ErDiagramLayout.Px(box.Y)" width="@ErDiagramLayout.Px(box.Width)" height="@ErDiagramLayout.Px(box.Height)" rx="8" fill="#ffffff" stroke="@stroke" stroke-width="@weight" />
+                                        <rect x="@ErDiagramLayout.Px(box.X)" y="@ErDiagramLayout.Px(box.Y)" width="@ErDiagramLayout.Px(box.Width)" height="@ErDiagramLayout.Px(box.HeaderHeight)" rx="8" fill="@header" />
+                                        <rect x="@ErDiagramLayout.Px(box.X)" y="@ErDiagramLayout.Px(box.Y + box.HeaderHeight - 8)" width="@ErDiagramLayout.Px(box.Width)" height="8" fill="@header" />
+                                        <foreignObject x="@ErDiagramLayout.Px(box.X)" y="@ErDiagramLayout.Px(box.Y)" width="@ErDiagramLayout.Px(box.Width)" height="@ErDiagramLayout.Px(box.Height)">
+                                            <div xmlns="http://www.w3.org/1999/xhtml" class="er-card-copy">
+                                                @if (current)
+                                                {
+                                                    <div class="er-card-title is-current">@box.Node.TableName</div>
+                                                }
+                                                else
+                                                {
+                                                    <a class="er-card-title" href="@href">@box.Node.TableName</a>
+                                                }
+                                                @foreach (var line in lines)
+                                                {
+                                                    <div class="er-card-field">@line</div>
+                                                }
+                                            </div>
+                                        </foreignObject>
                                     </g>
                                 }
                             </svg>
