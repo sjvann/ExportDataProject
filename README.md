@@ -4,7 +4,7 @@
 
 ## 🚀 功能特色
 
-- **多資料庫支援**: SQLite、SQL Server、MySQL、Oracle
+- **多資料庫支援**: SQLite、SQL Server、MySQL、Oracle、PostgreSQL
 - **兩種使用模式**: CLI 互動式介面 和 Web 介面
 - **資料庫結構分析**: 取得資料表結構、關聯性、索引等資訊
 - **範例資料預覽**: 可以查看每個資料表的範例資料
@@ -122,7 +122,7 @@ dotnet run --test
 
 #### DbControl (資料庫控制)
 - `ConnectionString`: 資料庫連線字串
-- `DbType`: 資料庫類型 (Sqlite, SqlServer, MySql, Oracle)
+- `DbType`: 資料庫類型 (Sqlite, SqlServer, MySql, Oracle, PostgreSql)
 - `TableType`: 匯出物件類型 (Table, View)
 - `TableList`: 指定要匯出的資料表清單 (空陣列表示匯出所有)
 - `Size`: 每個資料表匯出的記錄數量
@@ -153,6 +153,11 @@ Server=localhost;Database=database;Uid=user;Pwd=password;
 ### Oracle
 ```
 Data Source=server:1521/service;User Id=user;Password=password;
+```
+
+### PostgreSQL
+```
+Host=localhost;Port=5432;Database=database;Username=user;Password=password
 ```
 
 ## 🎯 使用場景

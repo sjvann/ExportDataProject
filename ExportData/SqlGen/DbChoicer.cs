@@ -27,6 +27,9 @@ namespace ExportData.SqlGen
                 case EnumDbType.Oracle:
                     sqlProvider = new GenSqlForOracle(config);
                     break;
+                case EnumDbType.PostgreSql:
+                    sqlProvider = new GenSqlForPostgreSql(config);
+                    break;
                 default:
                     return default;
             }

@@ -2,7 +2,7 @@
 title: '匯出工具支援 PostgreSQL'
 type: 'feature'
 created: '2026-10-04'
-status: 'in-progress'
+status: 'in-review'
 route: 'dispatch'
 review_loop_iteration: 0
 baseline_commit: 'ad554b82dbd3fa6787ded36629eae217be6f6c22'
@@ -52,19 +52,24 @@ context: []
 ## Tasks & Acceptance
 
 **Execution:**
-- [ ] `ExportData/ExportData.csproj`、`ExportDataWeb/ExportDataWeb.csproj` — 加入 `Npgsql` 10.0.3
-- [ ] `ExportData/SqlGen/GenSqlForPostgreSql.cs` — 實作 `ISqlGenerater`。外鍵經 `referential_constraints` 連到 `constraint_column_usage`。主鍵用 `constraint_type = 'PRIMARY KEY'`
-- [ ] `ExportData/SqlGen/DbChoicer.cs` — `PostgreSql` 建立該產生器
-- [ ] `ExportData/Services/InteractiveCliService.cs` — 選項 5
-- [ ] `ExportDataWeb/Pages/Index.cshtml` — 選項值 `PostgreSql`
-- [ ] `README.md` — 補類型與 `Host=localhost;Port=5432;Database=database;Username=user;Password=password`
-- [ ] `ExportData.Tests` 與 `ExportDataProjects.sln` — 新測試專案參考 `ExportData`，不連線即鎖住清單 SQL、`LIMIT` 引號與缺綱要
+- [x] `ExportData/ExportData.csproj`、`ExportDataWeb/ExportDataWeb.csproj` — 加入 `Npgsql` 10.0.3
+- [x] `ExportData/SqlGen/GenSqlForPostgreSql.cs` — 實作 `ISqlGenerater`。外鍵經 `referential_constraints` 連到 `constraint_column_usage`。主鍵用 `constraint_type = 'PRIMARY KEY'`
+- [x] `ExportData/SqlGen/DbChoicer.cs` — `PostgreSql` 建立該產生器
+- [x] `ExportData/Services/InteractiveCliService.cs` — 選項 5
+- [x] `ExportDataWeb/Pages/Index.cshtml` — 選項值 `PostgreSql`
+- [x] `README.md` — 補類型與 `Host=localhost;Port=5432;Database=database;Username=user;Password=password`
+- [x] `ExportData.Tests` 與 `ExportDataProjects.sln` — 新測試專案參考 `ExportData`，不連線即鎖住清單 SQL、`LIMIT` 引號與缺綱要
 
 **Acceptance Criteria:**
 - Given `DbType` 為 `PostgreSql`，when 建立產生器，then 型別是 `GenSqlForPostgreSql`。
 - Given 命令列與網頁，when 查看類型，then 看得到 PostgreSQL，值為 `PostgreSql`。
 
 ## Implementation Notes
+
+- 清單、`LIMIT` 引號、缺綱要與連線失敗都由 `ExportData.Tests` 鎖定，沒有連上 PostgreSQL。格式錯誤的連線字串在 `NpgsqlConnection` 建構時丟出 `ArgumentException`，`DbService.GetTableNamesAsync` 回傳 null。
+- 結構與資料庫資訊只查 `information_schema`。不對使用者表發 `COUNT(*)`，`TableSchema.RowCount` 維持 0。
+- 複合外鍵另以 `position_in_unique_constraint` 對齊 `constraint_column_usage`，避免笛卡兒積。子欄仍經 `key_column_usage`。
+- 匯出名稱以每個 `.` 拆段，空段不發語句。表名本身若含句點，會被拆成多個識別字。結構查詢只接受恰好兩段。
 
 ## Spec Change Log
 

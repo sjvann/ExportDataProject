@@ -104,10 +104,11 @@ namespace ExportData.Services
             Console.WriteLine("2. SQL Server");
             Console.WriteLine("3. MySQL");
             Console.WriteLine("4. Oracle");
+            Console.WriteLine("5. PostgreSQL");
 
             while (true)
             {
-                Console.Write("請輸入選項 (1-4): ");
+                Console.Write("請輸入選項 (1-5): ");
                 var input = Console.ReadLine();
 
                 switch (input)
@@ -120,6 +121,8 @@ namespace ExportData.Services
                         return EnumDbType.MySql;
                     case "4":
                         return EnumDbType.Oracle;
+                    case "5":
+                        return EnumDbType.PostgreSql;
                     default:
                         Console.WriteLine("❌ 無效的選項，請重新輸入。");
                         break;
