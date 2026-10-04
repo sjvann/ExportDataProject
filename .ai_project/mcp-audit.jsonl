@@ -38,3 +38,7 @@
 {"utc":"2026-10-04T04:32:41.2248408+00:00","tool":"list_services","ok":true,"ms":0,"args":{}}
 {"utc":"2026-10-04T04:32:47.1103391+00:00","tool":"stop_service","ok":true,"ms":148,"args":{"id":"exportdataweb"}}
 {"utc":"2026-10-04T04:32:56.0840116+00:00","tool":"build","ok":true,"ms":3751,"args":{"mode":"one","path":"ExportDataWeb/ExportDataWeb.csproj"}}
+{"utc":"2026-10-04T07:16:22.2640781+00:00","tool":"build","ok":true,"ms":9035,"args":{"mode":"one","path":"ExportDataWeb/ExportDataWeb.csproj"}}
+{"utc":"2026-10-04T07:16:37.8609170+00:00","tool":"start_service","ok":true,"ms":10332,"args":{"id":"exportdataweb"}}
+{"utc":"2026-10-04T07:22:46.5115981+00:00","tool":"get_log","ok":false,"ms":10,"args":{"id":"ExportDataWeb","tail":"80"},"error":"找不到服務：ExportDataWeb。可用 list_services 查看 id。"}
+{"utc":"2026-10-04T07:22:49.4778747+00:00","tool":"list_services","ok":true,"ms":2,"args":{}}

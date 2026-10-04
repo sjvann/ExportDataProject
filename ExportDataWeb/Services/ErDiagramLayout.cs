@@ -189,32 +189,76 @@ public static class ErDiagramLayout
 
         var px = -uy;
         var py = ux;
-        var heelX = x2 - ux * 14;
-        var heelY = y2 - uy * 14;
-        var startX = x1 + ux * 6;
-        var startY = y1 + uy * 6;
-        var line = self
-            ? $"M {N(startX)} {N(startY)} C {N(x1 + 42)} {N(y1)}, {N(x1 + 42)} {N(heelY)}, {N(heelX)} {N(heelY)}"
-            : $"M {N(startX)} {N(startY)} L {N(heelX)} {N(heelY)}";
-
         var many = edge.ChildEnd is ErChildEnd.OneOrMany or ErChildEnd.ZeroOrMany;
         var optional = edge.ChildEnd is ErChildEnd.ZeroOrOne or ErChildEnd.ZeroOrMany;
-        var one = edge.ChildEnd is ErChildEnd.ExactlyOne or ErChildEnd.ZeroOrOne or ErChildEnd.OneOrMany;
         var unknown = edge.ChildEnd == ErChildEnd.Unknown;
+        var heelX = x2 - ux * 12;
+        var heelY = y2 - uy * 12;
+        double endX;
+        double endY;
+        string? childBar = null;
+        string? childFoot = null;
+        double? zeroX = null;
+        double? zeroY = null;
+        double? labelX = null;
+        double? labelY = null;
+
+        if (many)
+        {
+            childFoot = $"M {N(heelX)} {N(heelY)} L {N(x2)} {N(y2)} M {N(heelX)} {N(heelY)} L {N(x2 + px * 7)} {N(y2 + py * 7)} M {N(heelX)} {N(heelY)} L {N(x2 - px * 7)} {N(y2 - py * 7)}";
+            if (optional)
+            {
+                zeroX = heelX - ux * 9;
+                zeroY = heelY - uy * 9;
+                endX = heelX - ux * 16;
+                endY = heelY - uy * 16;
+            }
+            else
+            {
+                childBar = Bar(heelX, heelY, px, py, 7);
+                endX = heelX;
+                endY = heelY;
+            }
+        }
+        else if (unknown)
+        {
+            endX = x2 - ux * 10;
+            endY = y2 - uy * 10;
+            labelX = endX + px * 8;
+            labelY = endY + py * 8;
+        }
+        else
+        {
+            childBar = Bar(x2, y2, px, py, 7);
+            if (optional)
+            {
+                zeroX = x2 - ux * 9;
+                zeroY = y2 - uy * 9;
+                endX = x2 - ux * 16;
+                endY = y2 - uy * 16;
+            }
+            else
+            {
+                endX = x2;
+                endY = y2;
+            }
+        }
+
+        var line = self
+            ? $"M {N(x1)} {N(y1)} C {N(x1 + 42)} {N(y1)}, {N(x1 + 42)} {N(endY)}, {N(endX)} {N(endY)}"
+            : $"M {N(x1)} {N(y1)} L {N(endX)} {N(endY)}";
 
         return new ErWire
         {
             Edge = edge,
             Line = line,
             ParentBar = Bar(x1, y1, px, py, 7),
-            ChildBar = one ? Bar(heelX, heelY, px, py, 7) : null,
-            ChildFoot = many
-                ? $"M {N(heelX)} {N(heelY)} L {N(x2)} {N(y2)} M {N(heelX)} {N(heelY)} L {N(x2 + px * 7)} {N(y2 + py * 7)} M {N(heelX)} {N(heelY)} L {N(x2 - px * 7)} {N(y2 - py * 7)}"
-                : null,
-            ZeroX = optional ? heelX - ux * 8 : null,
-            ZeroY = optional ? heelY - uy * 8 : null,
-            LabelX = unknown ? heelX + px * 10 : null,
-            LabelY = unknown ? heelY + py * 10 : null
+            ChildBar = childBar,
+            ChildFoot = childFoot,
+            ZeroX = zeroX,
+            ZeroY = zeroY,
+            LabelX = labelX,
+            LabelY = labelY
         };
     }
 
