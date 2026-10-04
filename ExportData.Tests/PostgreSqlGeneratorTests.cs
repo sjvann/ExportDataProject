@@ -78,8 +78,28 @@ public sealed class PostgreSqlGeneratorTests
             Prefix = "O'Brien"
         }).GetSqlAllTableNameList();
 
-        Assert.Equal(BaseTableListSql + " AND lower(table_name) LIKE 'o''brien%'", sql);
+        Assert.Equal(BaseTableListSql + " AND lower(table_name) LIKE 'o''brien%' ESCAPE '\\'", sql);
         Assert.DoesNotContain("lower(table_schema)", sql);
+    }
+
+    [Fact(DisplayName = "前綴中的反斜線、百分號與底線是字面比對")]
+    public void TableList_Prefix_EscapesLikeWildcards()
+    {
+        var sql = new GenSqlForPostgreSql(new ConfigDbControlSection
+        {
+            TableType = EnumTableType.Table,
+            Prefix = @"a\%_'b"
+        }).GetSqlAllTableNameList();
+
+        Assert.Equal(BaseTableListSql + @" AND lower(table_name) LIKE 'a\\\%\_''b%' ESCAPE '\'", sql);
+    }
+
+    [Fact(DisplayName = "未指定物件類型時列基礎表")]
+    public void TableList_NullTableType_ListsBaseTables()
+    {
+        var sql = new GenSqlForPostgreSql(new ConfigDbControlSection()).GetSqlAllTableNameList();
+
+        Assert.Equal(BaseTableListSql, sql);
     }
 
     [Fact(DisplayName = "匯出 public.orders 且 Size 20 時使用雙引號與 LIMIT")]
@@ -91,6 +111,15 @@ public sealed class PostgreSqlGeneratorTests
         Assert.Equal("SELECT * FROM \"public\".\"orders\" LIMIT 20", sql);
     }
 
+    [Fact(DisplayName = "識別字裡的雙引號加倍")]
+    public void Records_EmbeddedQuote_IsDoubled()
+    {
+        var sql = new GenSqlForPostgreSql(new ConfigDbControlSection { Size = 20 })
+            .GetSqlRecords("public.ord\"ers");
+
+        Assert.Equal("SELECT * FROM \"public\".\"ord\"\"ers\" LIMIT 20", sql);
+    }
+
     [Theory(DisplayName = "缺綱要或空段時不發出匯出語句")]
     [InlineData(null)]
     [InlineData("")]
@@ -98,6 +127,7 @@ public sealed class PostgreSqlGeneratorTests
     [InlineData(".orders")]
     [InlineData("public.")]
     [InlineData("public..orders")]
+    [InlineData("public.orders.extra")]
     public void Records_MissingSchemaOrEmptySegment_EmitsNothing(string? qualifiedName)
     {
         var sql = new GenSqlForPostgreSql(new ConfigDbControlSection { Size = 20 })
@@ -126,6 +156,8 @@ public sealed class PostgreSqlGeneratorTests
         Assert.Contains("information_schema.referential_constraints", GenSqlForPostgreSql.ColumnCatalogSql);
         Assert.Contains("information_schema.constraint_column_usage", GenSqlForPostgreSql.ColumnCatalogSql);
         Assert.Contains("ccu.table_schema || '.' || ccu.table_name AS referenced_table", GenSqlForPostgreSql.ColumnCatalogSql);
+        Assert.Contains("refk.ordinal_position = kcu.position_in_unique_constraint", GenSqlForPostgreSql.ColumnCatalogSql);
+        Assert.Contains("SELECT DISTINCT ON (kcu.table_schema, kcu.table_name, kcu.column_name)", GenSqlForPostgreSql.ColumnCatalogSql);
         Assert.DoesNotContain("REFERENCED_TABLE_NAME", GenSqlForPostgreSql.ColumnCatalogSql);
         Assert.DoesNotContain("`", GenSqlForPostgreSql.ColumnCatalogSql);
     }
@@ -138,10 +170,24 @@ public sealed class PostgreSqlGeneratorTests
         Assert.Contains("information_schema.constraint_column_usage", sql);
         Assert.Contains("ccu.table_schema || '.' || ccu.table_name AS parent_table", sql);
         Assert.Contains("kcu.table_schema || '.' || kcu.table_name AS child_table", sql);
+        Assert.Contains("refk.ordinal_position = kcu.position_in_unique_constraint", sql);
         Assert.Contains("kcu.table_schema NOT IN ('pg_catalog', 'information_schema')", sql);
         Assert.Contains("kcu.table_schema NOT LIKE 'pg_toast%'", sql);
         Assert.Contains("ccu.table_schema NOT IN ('pg_catalog', 'information_schema')", sql);
         Assert.Contains("ccu.table_schema NOT LIKE 'pg_toast%'", sql);
+    }
+
+    [Fact(DisplayName = "資料庫資訊的四段 SQL")]
+    public void DatabaseInfoSql_IsCatalogOnly()
+    {
+        Assert.Equal("SELECT current_database()", GenSqlForPostgreSql.DatabaseNameSql);
+        Assert.Equal("SELECT version()", GenSqlForPostgreSql.VersionSql);
+        Assert.Equal(
+            "SELECT COUNT(*)::int FROM information_schema.tables WHERE table_type = 'BASE TABLE' AND table_schema NOT IN ('pg_catalog', 'information_schema') AND table_schema NOT LIKE 'pg_toast%'",
+            GenSqlForPostgreSql.TableCountSql);
+        Assert.Equal(
+            "SELECT schema_name FROM information_schema.schemata WHERE schema_name NOT IN ('pg_catalog', 'information_schema') AND schema_name NOT LIKE 'pg_toast%'",
+            GenSqlForPostgreSql.SchemaListSql);
     }
 
     [Fact(DisplayName = "欄位填入型別、長度、精度、預設值、主鍵與外鍵")]

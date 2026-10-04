@@ -7,3 +7,9 @@
 - source_spec: `E:\sjvann\ExportDataProject/_bmad-output/implementation-artifacts/spec-add-postgresql.md`
   summary: 解析專案能標成 PostgreSQL，並以未加引號識別字的小寫摺疊比較表名。
   evidence: 支援 PostgreSQL 的規格約 2217 token，使用者要求拆開分批。解析專案的型別與識別字規則不阻擋命令列與網頁先讀取 PostgreSQL。
+- source_spec: `e:\sjvann\ExportDataProject\_bmad-output\implementation-artifacts\spec-add-postgresql.md`
+  summary: 構造查詢的成功路徑還沒用會回資料列的連線跑過 Dapper 組裝。
+  evidence: 審查確認現有測試只鎖 SQL 文字與 ToColumnInfo。沒有真實 PostgreSQL 時，無法證明查詢結果列會接到欄位屬性；SQL 與純函式已分開斷言。
+- source_spec: `e:\sjvann\ExportDataProject\_bmad-output\implementation-artifacts\spec-add-postgresql.md`
+  summary: 首頁「查看詳細」沒有把資料庫類型與連線字串帶到資料表詳細頁，詳細頁仍預設 SqlServer。
+  evidence: Index.cshtml 的連結只帶 tableName，TableDetailModel.DbType 預設為 SqlServer。這條連結在 PostgreSQL 變更之前就存在，四種舊資料庫同樣不會繼承首頁的選擇。

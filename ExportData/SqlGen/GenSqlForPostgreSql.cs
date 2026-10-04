@@ -34,7 +34,7 @@ namespace ExportData.SqlGen
                 AND c.table_name = pk.table_name
                 AND c.column_name = pk.column_name
             LEFT JOIN (
-                SELECT
+                SELECT DISTINCT ON (kcu.table_schema, kcu.table_name, kcu.column_name)
                     kcu.table_schema,
                     kcu.table_name,
                     kcu.column_name,
@@ -54,6 +54,7 @@ namespace ExportData.SqlGen
                     AND refk.table_name = ccu.table_name
                     AND refk.column_name = ccu.column_name
                     AND refk.ordinal_position = kcu.position_in_unique_constraint
+                ORDER BY kcu.table_schema, kcu.table_name, kcu.column_name
             ) fk ON c.table_schema = fk.table_schema
                 AND c.table_name = fk.table_name
                 AND c.column_name = fk.column_name
@@ -104,11 +105,20 @@ namespace ExportData.SqlGen
         public IDbConnection GetConnection()
         {
             var connect = new NpgsqlConnection(config.ConnectionString);
-            if (connect.State == ConnectionState.Closed)
+            try
             {
-                connect.Open();
+                if (connect.State == ConnectionState.Closed)
+                {
+                    connect.Open();
+                }
+
+                return connect;
             }
-            return connect;
+            catch
+            {
+                connect.Dispose();
+                throw;
+            }
         }
 
         public void CloseConnection(IDbConnection conn)
@@ -202,7 +212,7 @@ namespace ExportData.SqlGen
 
         internal static string BuildTableListSql(EnumTableType? tableType, string? prefix)
         {
-            var tableTypeLiteral = tableType == EnumTableType.Table ? "BASE TABLE" : "VIEW";
+            var tableTypeLiteral = tableType == EnumTableType.View ? "VIEW" : "BASE TABLE";
             var sql =
                 "SELECT table_schema || '.' || table_name FROM information_schema.tables WHERE table_type = '"
                 + tableTypeLiteral
@@ -212,8 +222,12 @@ namespace ExportData.SqlGen
                 return sql;
             }
 
-            var literal = prefix.ToLowerInvariant().Replace("'", "''", StringComparison.Ordinal);
-            return sql + " AND lower(table_name) LIKE '" + literal + "%'";
+            var literal = prefix.ToLowerInvariant()
+                .Replace("\\", "\\\\", StringComparison.Ordinal)
+                .Replace("%", "\\%", StringComparison.Ordinal)
+                .Replace("_", "\\_", StringComparison.Ordinal)
+                .Replace("'", "''", StringComparison.Ordinal);
+            return sql + " AND lower(table_name) LIKE '" + literal + "%' ESCAPE '\\'";
         }
 
         internal static string BuildRecordsSql(string? qualifiedName, int size)
@@ -235,7 +249,7 @@ namespace ExportData.SqlGen
             }
 
             var parts = qualifiedName.Split('.');
-            if (parts.Length < 2 || parts.Any(part => part.Length == 0))
+            if (parts.Length != 2 || parts.Any(part => part.Length == 0))
             {
                 return null;
             }
